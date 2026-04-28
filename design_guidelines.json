@@ -1,0 +1,107 @@
+{
+  "theme_and_archetype": {
+    "domain": "Education / School Management (SaaS Dashboard)",
+    "theme": "Light & Dark Toggle (Default: Light)",
+    "primary_archetype": "Archetype 4 (Swiss & High-Contrast)",
+    "emotional_tone": "Professional, Organized, Authoritative yet Accessible",
+    "language": "Portuguese (Portugal)"
+  },
+  "typography": {
+    "heading_font": "Work Sans",
+    "body_font": "IBM Plex Sans",
+    "rules": {
+      "headings": "Use tracking-tight for H1-H3. Do not center-align by default.",
+      "body": "leading-relaxed for paragraphs. tracking-[0.2em] for overlines and labels.",
+      "scales": {
+        "h1": "text-4xl sm:text-5xl",
+        "h2": "text-2xl sm:text-3xl",
+        "h3": "text-xl sm:text-2xl",
+        "body": "text-base text-sm"
+      }
+    }
+  },
+  "color_palette": {
+    "light": {
+      "background": "#F8FAFC",
+      "surface": "#FFFFFF",
+      "primary": "#2563EB",
+      "primary_foreground": "#FFFFFF",
+      "secondary": "#F1F5F9",
+      "text": "#0F172A",
+      "text_muted": "#64748B",
+      "border": "#E2E8F0",
+      "accents": {
+        "success": "#10B981",
+        "warning": "#F59E0B",
+        "destructive": "#EF4444"
+      }
+    },
+    "dark": {
+      "background": "#020617",
+      "surface": "#0F172A",
+      "primary": "#3B82F6",
+      "primary_foreground": "#FFFFFF",
+      "secondary": "#1E293B",
+      "text": "#F8FAFC",
+      "text_muted": "#94A3B8",
+      "border": "#1E293B",
+      "accents": {
+        "success": "#059669",
+        "warning": "#D97706",
+        "destructive": "#DC2626"
+      }
+    },
+    "rules": "Ensure high contrast (min 4.5:1 for body). Use tinted greys (slate) instead of pure grey to make the interface feel alive."
+  },
+  "layout_and_spacing": {
+    "spacing_scale": "Use standard Tailwind scale. Prioritize generous internal padding (p-6, p-8) for dashboard cards to avoid crowding.",
+    "grid_strategy": "Mode B: 'Control Room Grid'. Use grid-cols-1 md:grid-cols-3 lg:grid-cols-4 for KPI dashboard widgets. Tight gap (gap-4 or gap-6).",
+    "alignment": "Left-align dense data, labels, inputs, and tables for optimal scanning.",
+    "surfaces": "Flat solid backgrounds with crisp 1px borders (border-border). Soft hover shadows for interactive cards. Avoid heavy glassmorphism for data clarity."
+  },
+  "components": {
+    "forms_and_inputs": "Use customized Shadcn UI components. Form labels must be left-aligned. Inputs should have subtle rounded-md corners.",
+    "tables": "Shadcn Table for student lists. Implement hover rows and explicit column alignments.",
+    "tags_badges": "High-contrast pill shapes for 'Medidas Educativas' (e.g., PEI, Adequação Curricular). Use varied but professional badge colors.",
+    "buttons": "Clear primary CTA. Action and export buttons (CSV/PDF) should use secondary or outline variants.",
+    "navigation": "Responsive sidebar layout (desktop sidebar, mobile hamburger). Top header for Breadcrumbs, User Profile, and Theme Toggle."
+  },
+  "interactions_and_motion": {
+    "hover_states": "Cards lift slightly (-translate-y-1) with shadow-md. Links and buttons change brightness.",
+    "transitions": "Use specific transition properties (e.g., transition-colors duration-200 ease-in-out, transition-transform).",
+    "empty_loading": "Use clear empty states for tables with no data. Skeleton loaders for initial dashboard fetches."
+  },
+  "icons": {
+    "library": "lucide-react",
+    "rules": "Consistent stroke width (1.5px or 2px). Use clear semantic icons for navigation (Dashboard, Users) and actions (Edit, Delete, Export)."
+  },
+  "media": {
+    "image_urls": [
+      {
+        "url": "https://images.unsplash.com/photo-1745776437727-f2c2d3594f8e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2OTV8MHwxfHNlYXJjaHwzfHxtb2Rlcm4lMjB1bml2ZXJzaXR5JTIwYnVpbGRpbmclMjBleHRlcmlvciUyMGRheXRpbWV8ZW58MHx8fHwxNzc3MzkwMzc0fDA&ixlib=rb-4.1.0&q=85",
+        "category": "auth_background",
+        "description": "Modern educational building aesthetic for the split-screen login page background."
+      },
+      {
+        "url": "https://images.pexels.com/photos/33745700/pexels-photo-33745700.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "category": "marketing_or_onboarding",
+        "description": "Students in a library; can be used for empty states or welcome banners."
+      }
+    ],
+    "rules": "When placing text over images, use a max background overlay of bg-black/50 or bg-gradient-to-t for readability."
+  },
+  "testing": {
+    "attributes": "Add data-testid attribute to all interactive and key informational elements (buttons, inputs, links, tabs, dialogs) for robust automated testing. Format: kebab-case (e.g., data-testid='export-pdf-btn')."
+  },
+  "instructions_to_main_agent": [
+    "Implement a complete Sidebar/Header layout. The header must include the Light/Dark mode toggle (Theme switcher).",
+    "Login Page: Simple email/password form (mock auth if backend not provided) utilizing the provided 'auth_background' image on a split layout.",
+    "Dashboard Page: Display Recharts for statistics (total students, by class, by level, by school). Include KPI summary cards at the top.",
+    "Students (Alunos) Page: Implement a full CRUD interface.",
+    "Student List: A comprehensive Shadcn DataTable featuring search (Nome) and filters (Turma, Nível de Ensino).",
+    "Student Actions: Add 'Exportar CSV' and 'Exportar PDF' buttons near the table filters.",
+    "Student Form: Use Shadcn Form. Must include Nome, Idade, Turma, Escola, Nível de Ensino. For 'Medidas Educativas', implement a multi-select field for pre-defined tags AND a text area for free-text notes.",
+    "Language enforcement: Ensure all UI text is strictly Portuguese (Portugal) (e.g., 'Ecrã', 'Registo', 'Utilizadores', 'Detalhes do Aluno').",
+    "Install custom fonts via Next.js/Vite config or Google Fonts (Work Sans and IBM Plex Sans)."
+  ]
+}
