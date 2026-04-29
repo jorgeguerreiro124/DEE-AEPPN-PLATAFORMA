@@ -14,6 +14,7 @@ import api, { formatApiErrorDetail } from "@/lib/api";
 import { toast } from "sonner";
 
 const NIVEIS = ["Pré-escolar", "1.º Ciclo", "2.º Ciclo", "3.º Ciclo", "Secundário"];
+const TIPOS_MEDIDA = ["Seletiva", "Adicional"];
 
 const empty = {
   nome: "",
@@ -21,6 +22,7 @@ const empty = {
   turma: "",
   escola: "",
   nivel_ensino: "1.º Ciclo",
+  tipo_medida: "",
   medidas_tags: [],
   medidas_notas: "",
 };
@@ -56,6 +58,7 @@ export default function StudentFormDialog({ open, onOpenChange, student, tags, o
         turma: form.turma.trim(),
         escola: form.escola.trim(),
         nivel_ensino: form.nivel_ensino,
+        tipo_medida: form.tipo_medida || "",
         medidas_tags: form.medidas_tags,
         medidas_notas: form.medidas_notas || "",
       };
@@ -119,6 +122,23 @@ export default function StudentFormDialog({ open, onOpenChange, student, tags, o
                 <SelectContent>
                   {NIVEIS.map((n) => (
                     <SelectItem key={n} value={n}>{n}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tipo-medida">Tipo de Medida</Label>
+              <Select
+                value={form.tipo_medida || "__none"}
+                onValueChange={(v) => update("tipo_medida", v === "__none" ? "" : v)}
+              >
+                <SelectTrigger id="tipo-medida" data-testid="student-tipo-medida-select">
+                  <SelectValue placeholder="Selecionar…" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">— Nenhum —</SelectItem>
+                  {TIPOS_MEDIDA.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

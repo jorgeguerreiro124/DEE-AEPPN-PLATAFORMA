@@ -204,15 +204,16 @@ export default function Students() {
               <TableHead>Turma</TableHead>
               <TableHead>Escola</TableHead>
               <TableHead>Nível</TableHead>
+              <TableHead>Tipo Medida</TableHead>
               <TableHead>Medidas</TableHead>
               <TableHead className="text-right w-28">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={7} className="text-center py-12 text-muted-foreground">A carregar…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center py-12 text-muted-foreground">A carregar…</TableCell></TableRow>
             ) : items.length === 0 ? (
-              <TableRow><TableCell colSpan={7} className="text-center py-12 text-muted-foreground" data-testid="empty-state">
+              <TableRow><TableCell colSpan={8} className="text-center py-12 text-muted-foreground" data-testid="empty-state">
                 Nenhum aluno registado. Clique em "Novo Aluno" para começar.
               </TableCell></TableRow>
             ) : items.map((s) => (
@@ -222,6 +223,22 @@ export default function Students() {
                 <TableCell>{s.turma}</TableCell>
                 <TableCell>{s.escola}</TableCell>
                 <TableCell>{s.nivel_ensino}</TableCell>
+                <TableCell>
+                  {s.tipo_medida ? (
+                    <Badge
+                      variant="outline"
+                      className={
+                        s.tipo_medida === "Adicional"
+                          ? "border-amber-500/50 text-amber-700 dark:text-amber-400"
+                          : "border-blue-500/50 text-blue-700 dark:text-blue-400"
+                      }
+                    >
+                      {s.tipo_medida}
+                    </Badge>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
                     {(s.medidas_tags || []).slice(0, 3).map(t =>

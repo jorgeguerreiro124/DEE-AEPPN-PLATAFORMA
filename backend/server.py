@@ -136,6 +136,7 @@ class StudentBase(BaseModel):
     turma: str
     escola: str
     nivel_ensino: str  # e.g. Pré-escolar, 1º Ciclo, 2º Ciclo, 3º Ciclo, Secundário
+    tipo_medida: Optional[str] = ""  # Seletiva | Adicional | ""
     medidas_tags: List[str] = []
     medidas_notas: Optional[str] = ""
 
@@ -150,6 +151,7 @@ class StudentUpdate(BaseModel):
     turma: Optional[str] = None
     escola: Optional[str] = None
     nivel_ensino: Optional[str] = None
+    tipo_medida: Optional[str] = None
     medidas_tags: Optional[List[str]] = None
     medidas_notas: Optional[str] = None
 
