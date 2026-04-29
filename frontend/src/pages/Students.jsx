@@ -26,6 +26,8 @@ export default function Students() {
   const [search, setSearch] = useState("");
   const [nivel, setNivel] = useState("Todos");
   const [turmaFilter, setTurmaFilter] = useState("Todas");
+  const [escolaFilter, setEscolaFilter] = useState("Todas");
+  const [allEscolas, setAllEscolas] = useState([]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -39,6 +41,7 @@ export default function Students() {
       if (search) params.search = search;
       if (nivel !== "Todos") params.nivel_ensino = nivel;
       if (turmaFilter !== "Todas") params.turma = turmaFilter;
+      if (escolaFilter !== "Todas") params.escola = escolaFilter;
       const { data } = await api.get("/students", { params });
       setItems(data);
     } catch (err) {
@@ -46,11 +49,19 @@ export default function Students() {
     } finally {
       setLoading(false);
     }
-  }, [search, nivel, turmaFilter]);
+  }, [search, nivel, turmaFilter, escolaFilter]);
+
+  const fetchEscolas = useCallback(async () => {
+    try {
+      const { data } = await api.get("/stats");
+      setAllEscolas((data.por_escola || []).map((e) => e.name).filter(Boolean));
+    } catch { /* ignore */ }
+  }, []);
 
   useEffect(() => {
     api.get("/medidas/tags").then((r) => setTags(r.data.tags)).catch(() => {});
-  }, []);
+    fetchEscolas();
+  }, [fetchEscolas]);
 
   useEffect(() => {
     const t = setTimeout(fetchAll, 250);
@@ -66,6 +77,7 @@ export default function Students() {
       toast.success("Aluno eliminado");
       setConfirmDelete(null);
       fetchAll();
+      fetchEscolas();
     } catch (err) {
       toast.error(formatApiErrorDetail(err.response?.data?.detail) || err.message);
     }
@@ -212,7 +224,7 @@ export default function Students() {
         onOpenChange={setDialogOpen}
         student={editing}
         tags={tags}
-        onSaved={fetchAll}
+        onSaved={() => { fetchAll(); fetchEscolas(); }}
       />
 
       <AlertDialog open={!!confirmDelete} onOpenChange={(v) => !v && setConfirmDelete(null)}>
