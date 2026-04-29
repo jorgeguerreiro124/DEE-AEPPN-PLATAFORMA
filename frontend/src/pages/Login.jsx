@@ -69,7 +69,7 @@ export default function Login() {
             <div className="size-10 rounded-md bg-white/15 backdrop-blur grid place-items-center">
               <BookOpen className="size-5" />
             </div>
-            <div className="font-display text-lg font-semibold tracking-tight">Pedagógico</div>
+            <div className="font-display text-lg font-semibold tracking-tight">Departamento de Educação Especial</div>
           </div>
           <div className="space-y-4 max-w-md">
             <div className="overline text-white/80">Gestão Pedagógica Integrada</div>
@@ -80,7 +80,7 @@ export default function Login() {
               Registe alunos, acompanhe medidas educativas e visualize estatísticas — tudo num só lugar.
             </p>
           </div>
-          <div className="overline text-white/60">© Pedagógico</div>
+          <div className="overline text-white/60">AE Prof. Paula Nogueira — Olhão</div>
         </div>
       </div>
 
