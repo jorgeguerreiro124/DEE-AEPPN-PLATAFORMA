@@ -11,6 +11,7 @@ import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import Students from "@/pages/Students";
 import Users from "@/pages/Users";
+import Charts from "@/pages/Charts";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/alunos" element={<Students />} />
+              <Route path="/graficos" element={<Charts />} />
               <Route path="/utilizadores" element={<AdminRoute><Users /></AdminRoute>} />
             </Route>
           </Routes>
