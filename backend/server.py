@@ -103,6 +103,12 @@ async def get_current_user(request: Request) -> dict:
         raise HTTPException(status_code=401, detail="Token inválido")
 
 
+async def require_admin(current=Depends(get_current_user)) -> dict:
+    if current.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Acesso reservado a administradores")
+    return current
+
+
 # ====== Models ======
 class RegisterRequest(BaseModel):
     email: EmailStr
@@ -212,6 +218,92 @@ async def me(current=Depends(get_current_user)):
         name=current["name"],
         role=current.get("role", "user"),
     )
+
+
+# ====== User Management (admin only) ======
+class AdminUserCreate(BaseModel):
+    email: EmailStr
+    name: str = Field(min_length=1)
+    password: str = Field(min_length=6)
+    role: str = Field(default="user")  # "admin" | "user"
+
+
+class AdminUserUpdate(BaseModel):
+    name: Optional[str] = None
+    role: Optional[str] = None
+    password: Optional[str] = None  # if provided -> rehash
+
+
+@api_router.get("/users", response_model=List[UserResponse])
+async def list_users(_=Depends(require_admin)):
+    items = await db.users.find({}, {"_id": 0, "password_hash": 0}).sort("created_at", -1).to_list(1000)
+    return [UserResponse(id=i["id"], email=i["email"], name=i["name"], role=i.get("role", "user")) for i in items]
+
+
+@api_router.post("/users", response_model=UserResponse)
+async def admin_create_user(payload: AdminUserCreate, _=Depends(require_admin)):
+    if payload.role not in ("admin", "user"):
+        raise HTTPException(status_code=400, detail="Papel inválido")
+    email = payload.email.lower()
+    existing = await db.users.find_one({"email": email})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email já registado")
+    user_id = str(uuid.uuid4())
+    await db.users.insert_one({
+        "id": user_id,
+        "email": email,
+        "name": payload.name,
+        "password_hash": hash_password(payload.password),
+        "role": payload.role,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    return UserResponse(id=user_id, email=email, name=payload.name, role=payload.role)
+
+
+@api_router.put("/users/{user_id}", response_model=UserResponse)
+async def admin_update_user(user_id: str, payload: AdminUserUpdate, current=Depends(require_admin)):
+    target = await db.users.find_one({"id": user_id})
+    if not target:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+
+    update = {}
+    if payload.name is not None and payload.name.strip():
+        update["name"] = payload.name.strip()
+    if payload.role is not None:
+        if payload.role not in ("admin", "user"):
+            raise HTTPException(status_code=400, detail="Papel inválido")
+        seed_email = os.environ.get("ADMIN_EMAIL", "admin@escola.pt").lower()
+        if target["email"] == seed_email and payload.role != "admin":
+            raise HTTPException(status_code=400, detail="Não é possível remover o papel de admin do administrador principal")
+        update["role"] = payload.role
+    if payload.password:
+        if len(payload.password) < 6:
+            raise HTTPException(status_code=400, detail="Palavra-passe deve ter pelo menos 6 caracteres")
+        update["password_hash"] = hash_password(payload.password)
+
+    if not update:
+        raise HTTPException(status_code=400, detail="Nada a atualizar")
+
+    await db.users.update_one({"id": user_id}, {"$set": update})
+    refreshed = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    return UserResponse(
+        id=refreshed["id"], email=refreshed["email"],
+        name=refreshed["name"], role=refreshed.get("role", "user"),
+    )
+
+
+@api_router.delete("/users/{user_id}")
+async def admin_delete_user(user_id: str, current=Depends(require_admin)):
+    target = await db.users.find_one({"id": user_id})
+    if not target:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+    if target["id"] == current["id"]:
+        raise HTTPException(status_code=400, detail="Não pode eliminar a sua própria conta")
+    seed_email = os.environ.get("ADMIN_EMAIL", "admin@escola.pt").lower()
+    if target["email"] == seed_email:
+        raise HTTPException(status_code=400, detail="Não é possível eliminar o administrador principal")
+    await db.users.delete_one({"id": user_id})
+    return {"ok": True}
 
 
 # ====== Student Endpoints ======

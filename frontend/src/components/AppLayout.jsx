@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, GraduationCap, LogOut, Sun, Moon, BookOpen } from "lucide-react";
+import { LayoutDashboard, GraduationCap, LogOut, Sun, Moon, BookOpen, UsersRound } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 const navItems = [
   { to: "/", label: "Painel", icon: LayoutDashboard, end: true, testid: "nav-dashboard" },
   { to: "/alunos", label: "Alunos", icon: GraduationCap, testid: "nav-students" },
+  { to: "/utilizadores", label: "Utilizadores", icon: UsersRound, testid: "nav-users", adminOnly: true },
 ];
 
 export default function AppLayout() {
@@ -34,7 +35,7 @@ export default function AppLayout() {
           </div>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
-          {navItems.map((item) => (
+          {navItems.filter((it) => !it.adminOnly || user?.role === "admin").map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
