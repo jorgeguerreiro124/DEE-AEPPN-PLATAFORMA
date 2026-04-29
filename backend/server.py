@@ -124,7 +124,7 @@ class UserResponse(BaseModel):
 
 # Predefined educational measure tags (Portugal context)
 MEDIDAS_TAGS = [
-    "PEI", "Adequação Curricular", "Apoio Tutorial", "Apoio Pedagógico",
+    "PEI", "PIT", "Adequação Curricular", "Apoio Tutorial", "Apoio Pedagógico",
     "Tecnologias de Apoio", "Adaptações no Processo de Avaliação",
     "Antecipação", "Reforço Curricular",
 ]
@@ -309,6 +309,8 @@ async def stats(current=Depends(get_current_user)):
     distinct_escolas = len(by_escola)
     distinct_turmas = len(by_turma)
     com_medidas = await db.students.count_documents({"medidas_tags": {"$exists": True, "$ne": []}})
+    seletiva_count = await db.students.count_documents({"tipo_medida": "Seletiva"})
+    adicional_count = await db.students.count_documents({"tipo_medida": "Adicional"})
 
     return {
         "kpis": {
@@ -316,6 +318,8 @@ async def stats(current=Depends(get_current_user)):
             "total_escolas": distinct_escolas,
             "total_turmas": distinct_turmas,
             "alunos_com_medidas": com_medidas,
+            "alunos_seletiva": seletiva_count,
+            "alunos_adicional": adicional_count,
         },
         "por_turma": fmt(by_turma),
         "por_nivel": fmt(by_nivel),
