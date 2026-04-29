@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, FileDown, Search, FileText, School } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import StudentFormDialog from "@/components/StudentFormDialog";
 import { toast } from "sonner";
 
@@ -41,7 +42,7 @@ export default function Students() {
       if (search) params.search = search;
       if (nivel !== "Todos") params.nivel_ensino = nivel;
       if (turmaFilter !== "Todas") params.turma = turmaFilter;
-      if (escolaFilter !== "Todas") params.escola = escolaFilter;
+      if (escolaFilter.trim()) params.escola = escolaFilter.trim();
       const { data } = await api.get("/students", { params });
       setItems(data);
     } catch (err) {
@@ -142,29 +143,55 @@ export default function Students() {
       </div>
 
       <Card className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="relative">
-            <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Pesquisar por nome…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-              data-testid="search-input"
-            />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="space-y-1.5">
+            <Label className="overline">Pesquisar nome</Label>
+            <div className="relative">
+              <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Nome do aluno…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+                data-testid="search-input"
+              />
+            </div>
           </div>
-          <Select value={nivel} onValueChange={setNivel}>
-            <SelectTrigger data-testid="filter-nivel"><SelectValue placeholder="Nível" /></SelectTrigger>
-            <SelectContent>
-              {NIVEIS.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={turmaFilter} onValueChange={setTurmaFilter}>
-            <SelectTrigger data-testid="filter-turma"><SelectValue placeholder="Turma" /></SelectTrigger>
-            <SelectContent>
-              {turmas.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <div className="space-y-1.5">
+            <Label className="overline">Nível</Label>
+            <Select value={nivel} onValueChange={setNivel}>
+              <SelectTrigger data-testid="filter-nivel"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {NIVEIS.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="overline">Turmas</Label>
+            <Select value={turmaFilter} onValueChange={setTurmaFilter}>
+              <SelectTrigger data-testid="filter-turma"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {turmas.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="overline">Escola</Label>
+            <div className="relative">
+              <School className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Procurar por escola…"
+                value={escolaFilter}
+                onChange={(e) => setEscolaFilter(e.target.value)}
+                className="pl-9"
+                data-testid="filter-escola"
+                list="escolas-list"
+              />
+              <datalist id="escolas-list">
+                {allEscolas.map((e) => <option key={e} value={e} />)}
+              </datalist>
+            </div>
+          </div>
         </div>
       </Card>
 
