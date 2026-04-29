@@ -124,7 +124,7 @@ class UserResponse(BaseModel):
 
 # Predefined educational measure tags (Portugal context)
 MEDIDAS_TAGS = [
-    "PEI", "PIT", "Adequação Curricular", "Apoio Tutorial", "Apoio Pedagógico",
+    "PEI", "Adequação Curricular", "Apoio Tutorial", "Apoio Pedagógico",
     "Tecnologias de Apoio", "Adaptações no Processo de Avaliação",
     "Antecipação", "Reforço Curricular",
 ]
@@ -293,7 +293,6 @@ async def stats(current=Depends(get_current_user)):
     pipeline_nivel = [{"$group": {"_id": "$nivel_ensino", "count": {"$sum": 1}}}, {"$sort": {"count": -1}}]
     pipeline_escola = [{"$group": {"_id": "$escola", "count": {"$sum": 1}}}, {"$sort": {"count": -1}}]
     pipeline_medidas = [
-        {"$match": {"tipo_medida": {"$in": ["Seletiva", "Adicional"]}}},
         {"$unwind": {"path": "$medidas_tags", "preserveNullAndEmptyArrays": False}},
         {"$group": {"_id": "$medidas_tags", "count": {"$sum": 1}}},
         {"$sort": {"count": -1}},
