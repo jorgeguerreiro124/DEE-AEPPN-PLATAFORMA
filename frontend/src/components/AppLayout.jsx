@@ -29,8 +29,8 @@ export default function AppLayout() {
             <BookOpen className="size-5" />
           </div>
           <div>
-            <div className="font-display font-semibold tracking-tight">Pedagógico</div>
-            <div className="overline">Gestão Escolar</div>
+            <div className="font-display font-semibold tracking-tight text-sm leading-tight">Departamento de Educação Especial</div>
+            <div className="overline">AEPPN</div>
           </div>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
@@ -83,7 +83,7 @@ export default function AppLayout() {
             <div className="size-8 rounded-md bg-primary text-primary-foreground grid place-items-center">
               <BookOpen className="size-4" />
             </div>
-            <span className="font-display font-semibold">Pedagógico</span>
+            <span className="font-display font-semibold text-sm">DEE — AEPPN</span>
           </div>
           <div className="hidden md:block overline">Plataforma de Gestão Pedagógica</div>
           <div className="flex items-center gap-2">
