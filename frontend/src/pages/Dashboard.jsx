@@ -114,7 +114,7 @@ export default function Dashboard() {
         </Card>
 
         <Card className="p-6">
-          <div className="overline mb-4">Medidas Educativas Atribuídas</div>
+          <div className="overline mb-4">Medidas Educativas Atribuídas (Seletivas e Adicionais)</div>
           {por_medida.length === 0 ? (
             <EmptyChart />
           ) : (
