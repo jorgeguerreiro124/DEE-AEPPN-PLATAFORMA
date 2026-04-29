@@ -13,7 +13,7 @@ import {
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, FileDown, Search, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, FileDown, Search, FileText, School } from "lucide-react";
 import StudentFormDialog from "@/components/StudentFormDialog";
 import { toast } from "sonner";
 
@@ -26,7 +26,7 @@ export default function Students() {
   const [search, setSearch] = useState("");
   const [nivel, setNivel] = useState("Todos");
   const [turmaFilter, setTurmaFilter] = useState("Todas");
-  const [escolaFilter, setEscolaFilter] = useState("Todas");
+  const [escolaFilter, setEscolaFilter] = useState("");
   const [allEscolas, setAllEscolas] = useState([]);
 
   const [dialogOpen, setDialogOpen] = useState(false);

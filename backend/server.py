@@ -247,8 +247,8 @@ async def list_students(
         query["turma"] = turma
     if nivel_ensino:
         query["nivel_ensino"] = nivel_ensino
-    if escola:
-        query["escola"] = escola
+    if (escola):
+        query["escola"] = {"$regex": escola, "$options": "i"}
     items = await db.students.find(query, {"_id": 0, "owner_id": 0}).sort("created_at", -1).to_list(2000)
     return [Student(**i) for i in items]
 
