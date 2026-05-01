@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pt-PT">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#2563EB" />
+        <meta name="description" content="Plataforma de Gestão Pedagógica — Departamento de Educação Especial (AEPPN)." />
+        <meta http-equiv="refresh" content="0; url=/login" />
+        <link rel="canonical" href="/login" />
+        <title>DEE — AEPPN | Gestão Pedagógica</title>
+        <style>
+            html, body {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                background: #0f172a;
+                color: #f8fafc;
+            }
+            .wrap {
+                min-height: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 16px;
+                padding: 24px;
+                text-align: center;
+            }
+            .badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 6px 12px;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.08);
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                font-size: 12px;
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
+                color: #cbd5e1;
+            }
+            h1 {
+                font-size: 28px;
+                font-weight: 600;
+                letter-spacing: -0.02em;
+                margin: 8px 0 0;
+            }
+            p {
+                color: #94a3b8;
+                margin: 0;
+                font-size: 14px;
+            }
+            a.btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                margin-top: 16px;
+                padding: 10px 20px;
+                border-radius: 8px;
+                background: #2563eb;
+                color: #fff;
+                text-decoration: none;
+                font-weight: 500;
+                font-size: 14px;
+                transition: background 0.2s ease;
+            }
+            a.btn:hover {
+                background: #1d4ed8;
+            }
+            .spinner {
+                width: 20px;
+                height: 20px;
+                border: 2px solid rgba(255, 255, 255, 0.2);
+                border-top-color: #fff;
+                border-radius: 50%;
+                animation: spin 0.8s linear infinite;
+            }
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+        </style>
+        <script>
+            // Fallback redirect (caso o meta refresh seja bloqueado)
+            window.location.replace("/login");
+        </script>
+    </head>
+    <body>
+        <div class="wrap">
+            <span class="badge">Departamento de Educação Especial · AEPPN</span>
+            <h1>A redirecionar para o início de sessão…</h1>
+            <p>Se nada acontecer em alguns segundos, clique no botão abaixo.</p>
+            <a class="btn" href="/login">
+                <span class="spinner"></span>
+                Ir para o login
+            </a>
+        </div>
+    </body>
+</html>
