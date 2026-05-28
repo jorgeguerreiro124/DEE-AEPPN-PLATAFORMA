@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, GraduationCap, LogOut, Sun, Moon, BookOpen, UsersRound, BarChart3 } from "lucide-react";
+import { LayoutDashboard, GraduationCap, LogOut, Sun, Moon, BookOpen, UsersRound, BarChart3, ScrollText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ const navItems = [
   { to: "/", label: "Painel", icon: LayoutDashboard, end: true, testid: "nav-dashboard" },
   { to: "/alunos", label: "Alunos", icon: GraduationCap, testid: "nav-students" },
   { to: "/graficos", label: "Gráficos", icon: BarChart3, testid: "nav-charts" },
+  { to: "/dl54", label: "DL 54/2018", icon: ScrollText, testid: "nav-dl54" },
   { to: "/utilizadores", label: "Utilizadores", icon: UsersRound, testid: "nav-users", adminOnly: true },
 ];
 
