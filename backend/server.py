@@ -352,6 +352,7 @@ async def list_students(
     turma: Optional[str] = None,
     nivel_ensino: Optional[str] = None,
     escola: Optional[str] = None,
+    medida: Optional[str] = None,
     current=Depends(get_current_user),
 ):
     query = {}
@@ -363,6 +364,8 @@ async def list_students(
         query["nivel_ensino"] = nivel_ensino
     if (escola):
         query["escola"] = {"$regex": escola, "$options": "i"}
+    if medida:
+        query["medidas_tags"] = medida
     items = await db.students.find(query, {"_id": 0, "owner_id": 0}).sort("created_at", -1).to_list(2000)
     return [Student(**i) for i in items]
 

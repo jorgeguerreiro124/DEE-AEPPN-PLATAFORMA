@@ -30,6 +30,7 @@ export default function Students() {
   const [nivel, setNivel] = useState("Todos");
   const [turmaFilter, setTurmaFilter] = useState("Todas");
   const [escolaFilter, setEscolaFilter] = useState("");
+  const [medidaFilter, setMedidaFilter] = useState("Todas");
   const [allEscolas, setAllEscolas] = useState([]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -45,6 +46,7 @@ export default function Students() {
       if (nivel !== "Todos") params.nivel_ensino = nivel;
       if (turmaFilter !== "Todas") params.turma = turmaFilter;
       if (escolaFilter.trim()) params.escola = escolaFilter.trim();
+      if (medidaFilter !== "Todas") params.medida = medidaFilter;
       const { data } = await api.get("/students", { params });
       setItems(data);
     } catch (err) {
@@ -52,7 +54,7 @@ export default function Students() {
     } finally {
       setLoading(false);
     }
-  }, [search, nivel, turmaFilter, escolaFilter]);
+  }, [search, nivel, turmaFilter, escolaFilter, medidaFilter]);
 
   const fetchEscolas = useCallback(async () => {
     try {
@@ -146,7 +148,7 @@ export default function Students() {
       </div>
 
       <Card className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
           <div className="space-y-1.5">
             <Label className="overline">Pesquisar nome</Label>
             <div className="relative">
@@ -175,6 +177,16 @@ export default function Students() {
               <SelectTrigger data-testid="filter-turma"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {turmas.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="overline">Medida</Label>
+            <Select value={medidaFilter} onValueChange={setMedidaFilter}>
+              <SelectTrigger data-testid="filter-medida"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Todas">Todas</SelectItem>
+                {tags.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
