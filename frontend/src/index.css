@@ -86,3 +86,34 @@ h1, h2, h3, h4, h5, h6, .font-display {
         @apply uppercase text-xs tracking-[0.2em] text-muted-foreground font-medium;
     }
 }
+
+@media print {
+    @page {
+        margin: 1.5cm;
+        size: A4;
+    }
+    body {
+        background: white !important;
+        color: black !important;
+    }
+    .dark {
+        --background: 0 0% 100%;
+        --foreground: 0 0% 0%;
+        --card: 0 0% 100%;
+        --card-foreground: 0 0% 0%;
+        --muted: 0 0% 96%;
+        --muted-foreground: 0 0% 30%;
+        --border: 0 0% 85%;
+        --secondary: 0 0% 96%;
+    }
+    aside, header, [data-sonner-toaster], #emergent-badge {
+        display: none !important;
+    }
+    main {
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+    .min-h-screen {
+        min-height: 0 !important;
+    }
+}

@@ -15,6 +15,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, FileDown, Search, FileText, School } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { Link } from "react-router-dom";
 import StudentFormDialog from "@/components/StudentFormDialog";
 import { toast } from "sonner";
 
@@ -220,7 +221,15 @@ export default function Students() {
               </TableCell></TableRow>
             ) : items.map((s) => (
               <TableRow key={s.id} data-testid={`student-row-${s.id}`} className="hover:bg-secondary/40">
-                <TableCell className="font-medium">{s.nome}</TableCell>
+                <TableCell className="font-medium">
+                  <Link
+                    to={`/alunos/${s.id}`}
+                    className="hover:text-primary hover:underline underline-offset-4 transition-colors"
+                    data-testid={`student-link-${s.id}`}
+                  >
+                    {s.nome}
+                  </Link>
+                </TableCell>
                 <TableCell>{s.idade}</TableCell>
                 <TableCell>{s.turma}</TableCell>
                 <TableCell>{s.escola}</TableCell>

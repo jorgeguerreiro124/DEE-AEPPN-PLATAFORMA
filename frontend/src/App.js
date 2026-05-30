@@ -13,6 +13,7 @@ import Students from "@/pages/Students";
 import Users from "@/pages/Users";
 import Charts from "@/pages/Charts";
 import DecretoLei54 from "@/pages/DecretoLei54";
+import StudentDetail from "@/pages/StudentDetail";
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/alunos" element={<Students />} />
+              <Route path="/alunos/:id" element={<StudentDetail />} />
               <Route path="/graficos" element={<Charts />} />
               <Route path="/dl54" element={<DecretoLei54 />} />
               <Route path="/utilizadores" element={<AdminRoute><Users /></AdminRoute>} />
