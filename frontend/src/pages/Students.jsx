@@ -31,6 +31,7 @@ export default function Students() {
   const [turmaFilter, setTurmaFilter] = useState("Todas");
   const [escolaFilter, setEscolaFilter] = useState("");
   const [medidaFilter, setMedidaFilter] = useState("Todas");
+  const [tipoMedidaFilter, setTipoMedidaFilter] = useState("Todos");
   const [allEscolas, setAllEscolas] = useState([]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -47,6 +48,7 @@ export default function Students() {
       if (turmaFilter !== "Todas") params.turma = turmaFilter;
       if (escolaFilter.trim()) params.escola = escolaFilter.trim();
       if (medidaFilter !== "Todas") params.medida = medidaFilter;
+      if (tipoMedidaFilter !== "Todos") params.tipo_medida = tipoMedidaFilter;
       const { data } = await api.get("/students", { params });
       setItems(data);
     } catch (err) {
@@ -54,7 +56,7 @@ export default function Students() {
     } finally {
       setLoading(false);
     }
-  }, [search, nivel, turmaFilter, escolaFilter, medidaFilter]);
+  }, [search, nivel, turmaFilter, escolaFilter, medidaFilter, tipoMedidaFilter]);
 
   const fetchEscolas = useCallback(async () => {
     try {

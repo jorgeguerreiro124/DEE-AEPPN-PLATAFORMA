@@ -353,6 +353,7 @@ async def list_students(
     nivel_ensino: Optional[str] = None,
     escola: Optional[str] = None,
     medida: Optional[str] = None,
+    tipo_medida: Optional[str] = None,
     current=Depends(get_current_user),
 ):
     query = {}
@@ -366,6 +367,11 @@ async def list_students(
         query["escola"] = {"$regex": escola, "$options": "i"}
     if medida:
         query["medidas_tags"] = medida
+    if tipo_medida:
+        if tipo_medida == "sem_tipo":
+            query["$or"] = [{"tipo_medida": ""}, {"tipo_medida": {"$exists": False}}, {"tipo_medida": None}]
+        else:
+            query["tipo_medida"] = tipo_medida
     items = await db.students.find(query, {"_id": 0, "owner_id": 0}).sort("created_at", -1).to_list(2000)
     return [Student(**i) for i in items]
 
