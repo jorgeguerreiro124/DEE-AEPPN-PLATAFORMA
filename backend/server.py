@@ -135,6 +135,19 @@ MEDIDAS_TAGS = [
     "Antecipação", "Reforço Curricular",
 ]
 
+# Adaptations to the evaluation process (DL 54/2018)
+ADAPTACOES_AVALIACAO_TAGS = [
+    "Tempo suplementar",
+    "Leitura de enunciados",
+    "Prova adaptada",
+    "Utilização de produtos de apoio",
+    "Realização da prova em sala separada",
+    "Pausas durante a prova",
+    "Fonte ampliada / formato adaptado",
+    "Apoio na interpretação dos enunciados",
+    "Registo de respostas por terceiros",
+]
+
 
 class StudentBase(BaseModel):
     nome: str = Field(min_length=1)
@@ -144,6 +157,7 @@ class StudentBase(BaseModel):
     nivel_ensino: str  # e.g. Pré-escolar, 1º Ciclo, 2º Ciclo, 3º Ciclo, Secundário
     tipo_medida: Optional[str] = ""  # Seletiva | Adicional | ""
     medidas_tags: List[str] = []
+    adaptacoes_avaliacao: List[str] = []
     medidas_notas: Optional[str] = ""
 
 
@@ -159,6 +173,7 @@ class StudentUpdate(BaseModel):
     nivel_ensino: Optional[str] = None
     tipo_medida: Optional[str] = None
     medidas_tags: Optional[List[str]] = None
+    adaptacoes_avaliacao: Optional[List[str]] = None
     medidas_notas: Optional[str] = None
 
 
@@ -312,6 +327,11 @@ async def list_medidas_tags(current=Depends(get_current_user)):
     return {"tags": MEDIDAS_TAGS}
 
 
+@api_router.get("/adaptacoes/tags")
+async def list_adaptacoes_tags(current=Depends(get_current_user)):
+    return {"tags": ADAPTACOES_AVALIACAO_TAGS}
+
+
 @api_router.post("/students", response_model=Student)
 async def create_student(payload: StudentCreate, current=Depends(get_current_user)):
     now = datetime.now(timezone.utc).isoformat()
@@ -426,7 +446,7 @@ async def export_csv(current=Depends(get_current_user)):
     items = await db.students.find({}, {"_id": 0, "owner_id": 0}).sort("created_at", -1).to_list(5000)
     output = io.StringIO()
     writer = csv.writer(output, delimiter=";")
-    writer.writerow(["Nome", "Idade", "Turma", "Escola", "Nível de Ensino", "Medidas (Tags)", "Notas", "Criado em"])
+    writer.writerow(["Nome", "Idade", "Turma", "Escola", "Nível de Ensino", "Tipo Medida", "Medidas (Tags)", "Adaptações Avaliação", "Notas", "Criado em"])
     for it in items:
         writer.writerow([
             it.get("nome", ""),
@@ -434,7 +454,9 @@ async def export_csv(current=Depends(get_current_user)):
             it.get("turma", ""),
             it.get("escola", ""),
             it.get("nivel_ensino", ""),
+            it.get("tipo_medida", ""),
             ", ".join(it.get("medidas_tags", []) or []),
+            ", ".join(it.get("adaptacoes_avaliacao", []) or []),
             (it.get("medidas_notas") or "").replace("\n", " "),
             it.get("created_at", ""),
         ])

@@ -24,6 +24,7 @@ export default function Students() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tags, setTags] = useState([]);
+  const [adaptacoesTags, setAdaptacoesTags] = useState([]);
   const [search, setSearch] = useState("");
   const [nivel, setNivel] = useState("Todos");
   const [turmaFilter, setTurmaFilter] = useState("Todas");
@@ -61,6 +62,7 @@ export default function Students() {
 
   useEffect(() => {
     api.get("/medidas/tags").then((r) => setTags(r.data.tags)).catch(() => {});
+    api.get("/adaptacoes/tags").then((r) => setAdaptacoesTags(r.data.tags)).catch(() => {});
     fetchEscolas();
   }, [fetchEscolas]);
 
@@ -268,6 +270,7 @@ export default function Students() {
         onOpenChange={setDialogOpen}
         student={editing}
         tags={tags}
+        adaptacoesTags={adaptacoesTags}
         onSaved={() => { fetchAll(); fetchEscolas(); }}
       />
 

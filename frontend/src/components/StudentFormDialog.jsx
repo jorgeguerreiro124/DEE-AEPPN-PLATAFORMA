@@ -24,10 +24,11 @@ const empty = {
   nivel_ensino: "1.º Ciclo",
   tipo_medida: "",
   medidas_tags: [],
+  adaptacoes_avaliacao: [],
   medidas_notas: "",
 };
 
-export default function StudentFormDialog({ open, onOpenChange, student, tags, onSaved }) {
+export default function StudentFormDialog({ open, onOpenChange, student, tags, adaptacoesTags = [], onSaved }) {
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
 
@@ -48,6 +49,15 @@ export default function StudentFormDialog({ open, onOpenChange, student, tags, o
     }));
   };
 
+  const toggleAdaptacao = (tag) => {
+    setForm((p) => ({
+      ...p,
+      adaptacoes_avaliacao: (p.adaptacoes_avaliacao || []).includes(tag)
+        ? p.adaptacoes_avaliacao.filter((t) => t !== tag)
+        : [...(p.adaptacoes_avaliacao || []), tag],
+    }));
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -60,6 +70,7 @@ export default function StudentFormDialog({ open, onOpenChange, student, tags, o
         nivel_ensino: form.nivel_ensino,
         tipo_medida: form.tipo_medida || "",
         medidas_tags: form.medidas_tags,
+        adaptacoes_avaliacao: form.adaptacoes_avaliacao || [],
         medidas_notas: form.medidas_notas || "",
       };
       if (student?.id) {
@@ -175,6 +186,32 @@ export default function StudentFormDialog({ open, onOpenChange, student, tags, o
                 ))}
               </div>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Adaptações ao Processo de Avaliação</Label>
+            <p className="text-xs text-muted-foreground">Selecione as adaptações aplicáveis (DL 54/2018).</p>
+            <div className="flex flex-wrap gap-2 p-3 rounded-md border border-border bg-secondary/40 min-h-[64px]" data-testid="adaptacoes-tags-container">
+              {adaptacoesTags.map((tag) => {
+                const active = (form.adaptacoes_avaliacao || []).includes(tag);
+                return (
+                  <button
+                    type="button"
+                    key={tag}
+                    onClick={() => toggleAdaptacao(tag)}
+                    data-testid={`adapt-${tag.replace(/\s+/g, "-").toLowerCase()}`}
+                    className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors duration-200 ${
+                      active
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-card text-foreground border-border hover:border-primary/50"
+                    }`}
+                  >
+                    {tag}
+                    {active && <X className="size-3 inline ml-1" />}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="space-y-2">
