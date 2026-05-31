@@ -22,6 +22,8 @@ const empty = {
   turma: "",
   escola: "",
   nivel_ensino: "1.º Ciclo",
+  prof_educ_especial: "",
+  diretor_turma: "",
   tipo_medida: "",
   medidas_tags: [],
   adaptacoes_avaliacao: [],
@@ -68,6 +70,8 @@ export default function StudentFormDialog({ open, onOpenChange, student, tags, a
         turma: form.turma.trim(),
         escola: form.escola.trim(),
         nivel_ensino: form.nivel_ensino,
+        prof_educ_especial: (form.prof_educ_especial || "").trim(),
+        diretor_turma: (form.diretor_turma || "").trim(),
         tipo_medida: form.tipo_medida || "",
         medidas_tags: form.medidas_tags,
         adaptacoes_avaliacao: form.adaptacoes_avaliacao || [],
@@ -153,6 +157,26 @@ export default function StudentFormDialog({ open, onOpenChange, student, tags, a
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="prof-ee">Professor de Educação Especial</Label>
+              <Input
+                id="prof-ee"
+                value={form.prof_educ_especial || ""}
+                onChange={(e) => update("prof_educ_especial", e.target.value)}
+                placeholder="Nome do docente de educação especial"
+                data-testid="student-prof-ee-input"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="dt">Diretor de Turma / Titular de Turma</Label>
+              <Input
+                id="dt"
+                value={form.diretor_turma || ""}
+                onChange={(e) => update("diretor_turma", e.target.value)}
+                placeholder="Nome do DT ou professor titular"
+                data-testid="student-dt-input"
+              />
             </div>
           </div>
 

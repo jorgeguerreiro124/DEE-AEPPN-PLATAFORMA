@@ -155,6 +155,8 @@ class StudentBase(BaseModel):
     turma: str
     escola: str
     nivel_ensino: str  # e.g. Pré-escolar, 1º Ciclo, 2º Ciclo, 3º Ciclo, Secundário
+    prof_educ_especial: Optional[str] = ""
+    diretor_turma: Optional[str] = ""
     tipo_medida: Optional[str] = ""  # Seletiva | Adicional | ""
     medidas_tags: List[str] = []
     adaptacoes_avaliacao: List[str] = []
@@ -171,6 +173,8 @@ class StudentUpdate(BaseModel):
     turma: Optional[str] = None
     escola: Optional[str] = None
     nivel_ensino: Optional[str] = None
+    prof_educ_especial: Optional[str] = None
+    diretor_turma: Optional[str] = None
     tipo_medida: Optional[str] = None
     medidas_tags: Optional[List[str]] = None
     adaptacoes_avaliacao: Optional[List[str]] = None
@@ -455,7 +459,7 @@ async def export_csv(current=Depends(get_current_user)):
     items = await db.students.find({}, {"_id": 0, "owner_id": 0}).sort("created_at", -1).to_list(5000)
     output = io.StringIO()
     writer = csv.writer(output, delimiter=";")
-    writer.writerow(["Nome", "Idade", "Turma", "Escola", "Nível de Ensino", "Tipo Medida", "Medidas (Tags)", "Adaptações Avaliação", "Notas", "Criado em"])
+    writer.writerow(["Nome", "Idade", "Turma", "Escola", "Nível de Ensino", "Prof. Educ. Especial", "Diretor/Titular Turma", "Tipo Medida", "Medidas (Tags)", "Adaptações Avaliação", "Notas", "Criado em"])
     for it in items:
         writer.writerow([
             it.get("nome", ""),
@@ -463,6 +467,8 @@ async def export_csv(current=Depends(get_current_user)):
             it.get("turma", ""),
             it.get("escola", ""),
             it.get("nivel_ensino", ""),
+            it.get("prof_educ_especial", ""),
+            it.get("diretor_turma", ""),
             it.get("tipo_medida", ""),
             ", ".join(it.get("medidas_tags", []) or []),
             ", ".join(it.get("adaptacoes_avaliacao", []) or []),

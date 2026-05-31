@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   ArrowLeft, Pencil, Printer, User as UserIcon, School as SchoolIcon,
   Layers, GraduationCap, Calendar, ClipboardList, ShieldCheck, ListChecks,
-  FileText,
+  FileText, UserCheck, Users as UsersIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import StudentFormDialog from "@/components/StudentFormDialog";
@@ -154,6 +154,8 @@ export default function StudentDetail() {
           <Field icon={Layers} label="Turma" value={student.turma} testid="field-turma" />
           <Field icon={GraduationCap} label="Nível de Ensino" value={student.nivel_ensino} testid="field-nivel" />
           <Field icon={ShieldCheck} label="Tipo de Medida" value={student.tipo_medida || "—"} testid="field-tipo" />
+          <Field icon={UserCheck} label="Prof. Educação Especial" value={student.prof_educ_especial} testid="field-prof-ee" />
+          <Field icon={UsersIcon} label="Diretor / Titular de Turma" value={student.diretor_turma} testid="field-dt" />
         </div>
       </Card>
 
