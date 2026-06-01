@@ -14,11 +14,13 @@ from typing import List, Optional
 
 import bcrypt
 import jwt
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, Query
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, Query, UploadFile, File, Header
 from fastapi.responses import StreamingResponse
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field, EmailStr
+
+from storage import init_storage, put_object, get_object, APP_NAME
 
 
 # ---- Mongo ----
@@ -407,7 +409,134 @@ async def delete_student(student_id: str, current=Depends(get_current_user)):
     res = await db.students.delete_one({"id": student_id})
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Aluno não encontrado")
+    # Soft-delete all attachments
+    await db.student_files.update_many({"student_id": student_id}, {"$set": {"is_deleted": True}})
     return {"ok": True}
+
+
+# ====== Attachments ======
+ALLOWED_EXTS = {"pdf", "doc", "docx", "odt", "jpg", "jpeg", "png", "webp"}
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
+ATTACHMENT_CATEGORIES = ["RTP", "PEI", "PIT", "Ata EMAEI", "Avaliação", "Outro"]
+
+
+@api_router.get("/students/{student_id}/files")
+async def list_student_files(student_id: str, current=Depends(get_current_user)):
+    student = await db.students.find_one({"id": student_id})
+    if not student:
+        raise HTTPException(status_code=404, detail="Aluno não encontrado")
+    files = await db.student_files.find(
+        {"student_id": student_id, "is_deleted": False},
+        {"_id": 0, "storage_path": 0},
+    ).sort("created_at", -1).to_list(200)
+    return files
+
+
+@api_router.post("/students/{student_id}/files")
+async def upload_student_file(
+    student_id: str,
+    file: UploadFile = File(...),
+    category: str = Query("Outro"),
+    current=Depends(get_current_user),
+):
+    student = await db.students.find_one({"id": student_id})
+    if not student:
+        raise HTTPException(status_code=404, detail="Aluno não encontrado")
+    if category not in ATTACHMENT_CATEGORIES:
+        category = "Outro"
+    ext = (file.filename.rsplit(".", 1)[-1] if "." in (file.filename or "") else "bin").lower()
+    if ext not in ALLOWED_EXTS:
+        raise HTTPException(status_code=400, detail="Tipo de ficheiro não permitido")
+    data = await file.read()
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=400, detail="Ficheiro excede o limite de 10 MB")
+    file_id = str(uuid.uuid4())
+    path = f"{APP_NAME}/students/{student_id}/{file_id}.{ext}"
+    content_type = file.content_type or "application/octet-stream"
+    try:
+        result = put_object(path, data, content_type)
+    except Exception as e:
+        logger.error(f"Storage upload failed: {e}")
+        raise HTTPException(status_code=502, detail="Falha ao guardar o ficheiro")
+    doc = {
+        "id": file_id,
+        "student_id": student_id,
+        "category": category,
+        "original_filename": file.filename or f"{file_id}.{ext}",
+        "content_type": content_type,
+        "size": result.get("size", len(data)),
+        "storage_path": result.get("path", path),
+        "uploaded_by": current["id"],
+        "uploaded_by_name": current.get("name", ""),
+        "is_deleted": False,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.student_files.insert_one(doc)
+    doc.pop("_id", None)
+    return {k: v for k, v in doc.items() if k not in {"storage_path"}}
+
+
+@api_router.get("/students/{student_id}/files/{file_id}/download")
+async def download_student_file(
+    student_id: str,
+    file_id: str,
+    request: Request,
+    authorization: Optional[str] = Header(None),
+    auth: Optional[str] = Query(None),
+):
+    # Accept auth via httpOnly cookie (default), Bearer header, or ?auth= query param
+    token = None
+    cookie_token = request.cookies.get("access_token")
+    if cookie_token:
+        token = cookie_token
+    elif authorization and authorization.startswith("Bearer "):
+        token = authorization[7:]
+    elif auth:
+        token = auth
+
+    user_ok = False
+    if token:
+        try:
+            payload = jwt.decode(token, get_jwt_secret(), algorithms=[JWT_ALGORITHM])
+            if payload.get("type") == "access":
+                user_ok = True
+        except jwt.PyJWTError:
+            pass
+    if not user_ok:
+        raise HTTPException(status_code=401, detail="Não autenticado")
+
+    record = await db.student_files.find_one(
+        {"id": file_id, "student_id": student_id, "is_deleted": False},
+        {"_id": 0},
+    )
+    if not record:
+        raise HTTPException(status_code=404, detail="Ficheiro não encontrado")
+    try:
+        data, _ = get_object(record["storage_path"])
+    except Exception as e:
+        logger.error(f"Storage download failed: {e}")
+        raise HTTPException(status_code=502, detail="Falha ao obter ficheiro")
+    return Response(
+        content=data,
+        media_type=record.get("content_type", "application/octet-stream"),
+        headers={"Content-Disposition": f'inline; filename="{record["original_filename"]}"'},
+    )
+
+
+@api_router.delete("/students/{student_id}/files/{file_id}")
+async def delete_student_file(student_id: str, file_id: str, current=Depends(get_current_user)):
+    res = await db.student_files.update_one(
+        {"id": file_id, "student_id": student_id, "is_deleted": False},
+        {"$set": {"is_deleted": True, "deleted_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Ficheiro não encontrado")
+    return {"ok": True}
+
+
+@api_router.get("/attachments/categories")
+async def list_attachment_categories(current=Depends(get_current_user)):
+    return {"categories": ATTACHMENT_CATEGORIES}
 
 
 # ====== Stats ======
@@ -502,6 +631,14 @@ async def on_startup():
     await db.users.create_index("email", unique=True)
     await db.students.create_index("id", unique=True)
     await db.students.create_index("nome")
+    await db.student_files.create_index([("student_id", 1), ("is_deleted", 1)])
+    await db.student_files.create_index("id", unique=True)
+
+    # Object storage
+    try:
+        init_storage()
+    except Exception as e:
+        logger.warning(f"Object storage init falhou (anexos indisponíveis): {e}")
 
     # Seed admin
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@escola.pt").lower()

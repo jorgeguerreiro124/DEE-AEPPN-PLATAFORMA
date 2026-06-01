@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import StudentFormDialog from "@/components/StudentFormDialog";
+import StudentAttachments from "@/components/StudentAttachments";
 
 function Field({ icon: Icon, label, value, testid }) {
   return (
@@ -206,6 +207,9 @@ export default function StudentDetail() {
           <p className="text-sm leading-relaxed whitespace-pre-wrap" data-testid="notas-content">{student.medidas_notas}</p>
         </Card>
       )}
+
+      {/* Anexos */}
+      <StudentAttachments studentId={student.id} />
 
       {/* Metadata */}
       <Card className="p-6 print:shadow-none print:border print:border-border">
