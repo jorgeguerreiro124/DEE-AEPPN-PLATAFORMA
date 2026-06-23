@@ -163,6 +163,7 @@ class StudentBase(BaseModel):
     medidas_tags: List[str] = []
     adaptacoes_avaliacao: List[str] = []
     medidas_notas: Optional[str] = ""
+    photo_path: Optional[str] = ""
 
 
 class StudentCreate(StudentBase):
@@ -537,6 +538,93 @@ async def delete_student_file(student_id: str, file_id: str, current=Depends(get
 @api_router.get("/attachments/categories")
 async def list_attachment_categories(current=Depends(get_current_user)):
     return {"categories": ATTACHMENT_CATEGORIES}
+
+
+# ====== Student photo ======
+PHOTO_EXTS = {"jpg", "jpeg", "png", "webp"}
+MAX_PHOTO_BYTES = 5 * 1024 * 1024  # 5 MB
+
+
+@api_router.post("/students/{student_id}/photo")
+async def upload_student_photo(
+    student_id: str,
+    file: UploadFile = File(...),
+    current=Depends(get_current_user),
+):
+    student = await db.students.find_one({"id": student_id})
+    if not student:
+        raise HTTPException(status_code=404, detail="Aluno não encontrado")
+    ext = (file.filename.rsplit(".", 1)[-1] if "." in (file.filename or "") else "").lower()
+    if ext not in PHOTO_EXTS:
+        raise HTTPException(status_code=400, detail="Formato inválido. Use JPG, PNG ou WEBP")
+    data = await file.read()
+    if len(data) > MAX_PHOTO_BYTES:
+        raise HTTPException(status_code=400, detail="Fotografia excede o limite de 5 MB")
+    photo_id = str(uuid.uuid4())[:8]
+    path = f"{APP_NAME}/students/{student_id}/photo-{photo_id}.{ext}"
+    content_type = file.content_type or f"image/{ext if ext != 'jpg' else 'jpeg'}"
+    try:
+        result = put_object(path, data, content_type)
+    except Exception as e:
+        logger.error(f"Photo upload failed: {e}")
+        raise HTTPException(status_code=502, detail="Falha ao guardar a fotografia")
+    new_path = result.get("path", path)
+    await db.students.update_one(
+        {"id": student_id},
+        {"$set": {
+            "photo_path": new_path,
+            "photo_content_type": content_type,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }},
+    )
+    return {"photo_path": new_path, "content_type": content_type}
+
+
+@api_router.get("/students/{student_id}/photo")
+async def get_student_photo(
+    student_id: str,
+    request: Request,
+    authorization: Optional[str] = Header(None),
+    auth: Optional[str] = Query(None),
+):
+    token = request.cookies.get("access_token")
+    if not token and authorization and authorization.startswith("Bearer "):
+        token = authorization[7:]
+    if not token and auth:
+        token = auth
+    if not token:
+        raise HTTPException(status_code=401, detail="Não autenticado")
+    try:
+        payload = jwt.decode(token, get_jwt_secret(), algorithms=[JWT_ALGORITHM])
+        if payload.get("type") != "access":
+            raise HTTPException(status_code=401, detail="Token inválido")
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    student = await db.students.find_one({"id": student_id}, {"_id": 0})
+    if not student or not student.get("photo_path"):
+        raise HTTPException(status_code=404, detail="Sem fotografia")
+    try:
+        data, ct = get_object(student["photo_path"])
+    except Exception as e:
+        logger.error(f"Photo download failed: {e}")
+        raise HTTPException(status_code=502, detail="Falha ao obter fotografia")
+    return Response(
+        content=data,
+        media_type=student.get("photo_content_type") or ct or "image/jpeg",
+        headers={"Cache-Control": "private, max-age=300"},
+    )
+
+
+@api_router.delete("/students/{student_id}/photo")
+async def delete_student_photo(student_id: str, current=Depends(get_current_user)):
+    res = await db.students.update_one(
+        {"id": student_id},
+        {"$set": {"photo_path": "", "photo_content_type": "", "updated_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Aluno não encontrado")
+    return {"ok": True}
+
 
 
 # ====== Stats ======

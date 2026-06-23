@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import StudentFormDialog from "@/components/StudentFormDialog";
 import StudentAttachments from "@/components/StudentAttachments";
+import StudentPhoto from "@/components/StudentPhoto";
 
 function Field({ icon: Icon, label, value, testid }) {
   return (
@@ -123,18 +124,21 @@ export default function StudentDetail() {
 
       {/* Header card */}
       <Card className="p-6 lg:p-8 print:shadow-none print:border print:border-border">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="overline">Ficha do Aluno</div>
-            <h1 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight mt-2 break-words" data-testid="student-name">
-              {student.nome}
-            </h1>
-            <div className="flex flex-wrap items-center gap-2 mt-3 text-sm text-muted-foreground">
-              <span>{student.idade} anos</span>
-              <span aria-hidden>·</span>
-              <span>{student.turma}</span>
-              <span aria-hidden>·</span>
-              <span>{student.nivel_ensino}</span>
+        <div className="flex flex-wrap items-start justify-between gap-6">
+          <div className="flex items-start gap-5 min-w-0">
+            <StudentPhoto student={student} onChange={load} />
+            <div className="min-w-0">
+              <div className="overline">Ficha do Aluno</div>
+              <h1 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight mt-2 break-words" data-testid="student-name">
+                {student.nome}
+              </h1>
+              <div className="flex flex-wrap items-center gap-2 mt-3 text-sm text-muted-foreground">
+                <span>{student.idade} anos</span>
+                <span aria-hidden>·</span>
+                <span>{student.turma}</span>
+                <span aria-hidden>·</span>
+                <span>{student.nivel_ensino}</span>
+              </div>
             </div>
           </div>
           {student.tipo_medida && (
