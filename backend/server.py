@@ -656,6 +656,28 @@ async def stats(current=Depends(get_current_user)):
     by_escola = await db.students.aggregate(pipeline_escola).to_list(100)
     by_medidas = await db.students.aggregate(pipeline_medidas).to_list(100)
 
+    # Group by school year (parsed from turma)
+    import re as _re
+    def _extract_ano(turma):
+        m = _re.match(r"\s*(\d{1,2})", turma or "")
+        return f"{m.group(1)}º ano" if m else None
+    all_students = await db.students.find({}, {"_id": 0, "turma": 1, "tipo_medida": 1}).to_list(5000)
+    ano_total, ano_sel, ano_add = {}, {}, {}
+    for s in all_students:
+        ano = _extract_ano(s.get("turma", ""))
+        if not ano:
+            continue
+        ano_total[ano] = ano_total.get(ano, 0) + 1
+        if s.get("tipo_medida") == "Seletiva":
+            ano_sel[ano] = ano_sel.get(ano, 0) + 1
+        elif s.get("tipo_medida") == "Adicional":
+            ano_add[ano] = ano_add.get(ano, 0) + 1
+    def _sort_anos(d):
+        return [{"name": k, "value": v} for k, v in sorted(d.items(), key=lambda x: int(x[0].split("º")[0]))]
+    por_ano = _sort_anos(ano_total)
+    por_ano_seletiva = _sort_anos(ano_sel)
+    por_ano_adicional = _sort_anos(ano_add)
+
     def fmt(rows):
         return [{"name": r["_id"] or "—", "value": r["count"]} for r in rows]
 
@@ -691,6 +713,9 @@ async def stats(current=Depends(get_current_user)):
         "por_nivel": fmt(by_nivel),
         "por_escola": fmt(by_escola),
         "por_medida": fmt(by_medidas),
+        "por_ano": por_ano,
+        "por_ano_seletiva": por_ano_seletiva,
+        "por_ano_adicional": por_ano_adicional,
     }
 
 

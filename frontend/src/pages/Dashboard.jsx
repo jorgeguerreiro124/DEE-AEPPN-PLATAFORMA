@@ -44,7 +44,7 @@ export default function Dashboard() {
     );
   }
 
-  const { kpis, por_turma, por_nivel, por_escola, por_medida } = data;
+  const { kpis, por_nivel, por_escola, por_medida, por_ano, por_ano_seletiva, por_ano_adicional } = data;
 
   return (
     <div className="space-y-8" data-testid="dashboard-page">
@@ -84,12 +84,12 @@ export default function Dashboard() {
         </Card>
 
         <Card className="p-6">
-          <div className="overline mb-4">Alunos por Turma</div>
-          {por_turma.length === 0 ? (
+          <div className="overline mb-4">Alunos por Ano (Global)</div>
+          {por_ano.length === 0 ? (
             <EmptyChart />
           ) : (
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={por_turma}>
+              <BarChart data={por_ano}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                 <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} allowDecimals={false} />
@@ -129,6 +129,40 @@ export default function Dashboard() {
                 <YAxis dataKey="name" type="category" stroke="hsl(var(--muted-foreground))" fontSize={12} width={140} />
                 <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
                 <Bar dataKey="value" fill="hsl(var(--chart-3))" radius={[0, 6, 6, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+
+        <Card className="p-6">
+          <div className="overline mb-4">Alunos por Ano · Medidas Seletivas</div>
+          {por_ano_seletiva.length === 0 ? (
+            <EmptyChart />
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={por_ano_seletiva}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} allowDecimals={false} />
+                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
+                <Bar dataKey="value" fill="hsl(var(--chart-1))" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+
+        <Card className="p-6">
+          <div className="overline mb-4">Alunos por Ano · Medidas Adicionais</div>
+          {por_ano_adicional.length === 0 ? (
+            <EmptyChart />
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={por_ano_adicional}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} allowDecimals={false} />
+                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
+                <Bar dataKey="value" fill="hsl(var(--chart-5))" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
