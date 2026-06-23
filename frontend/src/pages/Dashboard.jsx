@@ -5,7 +5,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
   PieChart, Pie, Cell, Legend,
 } from "recharts";
-import { Users, School, Layers, ShieldCheck, ListChecks, ListPlus } from "lucide-react";
+import { Users, School, Layers, ShieldCheck, ListChecks, ListPlus, CalendarClock, AlertTriangle } from "lucide-react";
 
 const COLORS = ["hsl(221 83% 53%)", "hsl(160 60% 45%)", "hsl(27 87% 60%)", "hsl(280 65% 60%)", "hsl(340 75% 55%)"];
 
@@ -54,13 +54,15 @@ export default function Dashboard() {
         <p className="text-sm text-muted-foreground mt-1">Estatísticas dos alunos registados na plataforma.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Kpi testid="kpi-total-alunos" label="Total de Alunos" value={kpis.total_alunos} icon={Users} />
         <Kpi testid="kpi-total-escolas" label="Escolas" value={kpis.total_escolas} icon={School} />
         <Kpi testid="kpi-total-turmas" label="Turmas" value={kpis.total_turmas} icon={Layers} />
         <Kpi testid="kpi-com-medidas" label="Alunos com Medidas" value={kpis.alunos_com_medidas} icon={ShieldCheck} />
         <Kpi testid="kpi-seletiva" label="Medidas Seletivas" value={kpis.alunos_seletiva ?? 0} icon={ListChecks} />
         <Kpi testid="kpi-adicional" label="Medidas Adicionais" value={kpis.alunos_adicional ?? 0} icon={ListPlus} />
+        <Kpi testid="kpi-rev-proxima" label="Revisões em ≤ 30 dias" value={kpis.revisao_proxima ?? 0} icon={CalendarClock} />
+        <Kpi testid="kpi-rev-atrasada" label="Revisões em atraso" value={kpis.revisao_atrasada ?? 0} icon={AlertTriangle} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

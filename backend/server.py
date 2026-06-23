@@ -36,6 +36,11 @@ JWT_ALGORITHM = "HS256"
 ACCESS_TTL_MIN = 60 * 24  # 24h for convenience
 REFRESH_TTL_DAYS = 7
 
+ALLOWED_EMAIL_DOMAIN = "aeppn.pt"
+LOGIN_MAX_ATTEMPTS = 5
+LOGIN_WINDOW_SECONDS = 300  # 5 min
+_login_attempts: dict = {}  # email -> [(timestamp, ok)]
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -157,9 +162,13 @@ class StudentBase(BaseModel):
     turma: str
     escola: str
     nivel_ensino: str  # e.g. Pré-escolar, 1º Ciclo, 2º Ciclo, 3º Ciclo, Secundário
+    ano_letivo: Optional[str] = ""  # e.g. "2025/26"
     prof_educ_especial: Optional[str] = ""
     diretor_turma: Optional[str] = ""
     tipo_medida: Optional[str] = ""  # Seletiva | Adicional | ""
+    estado_processo: Optional[str] = ""  # Em elaboração | Aprovado | Em revisão | Concluído
+    data_elaboracao_doc: Optional[str] = ""  # ISO date YYYY-MM-DD
+    data_revisao_doc: Optional[str] = ""  # ISO date YYYY-MM-DD
     medidas_tags: List[str] = []
     adaptacoes_avaliacao: List[str] = []
     medidas_notas: Optional[str] = ""
@@ -176,9 +185,13 @@ class StudentUpdate(BaseModel):
     turma: Optional[str] = None
     escola: Optional[str] = None
     nivel_ensino: Optional[str] = None
+    ano_letivo: Optional[str] = None
     prof_educ_especial: Optional[str] = None
     diretor_turma: Optional[str] = None
     tipo_medida: Optional[str] = None
+    estado_processo: Optional[str] = None
+    data_elaboracao_doc: Optional[str] = None
+    data_revisao_doc: Optional[str] = None
     medidas_tags: Optional[List[str]] = None
     adaptacoes_avaliacao: Optional[List[str]] = None
     medidas_notas: Optional[str] = None
@@ -191,34 +204,26 @@ class Student(StudentBase):
 
 
 # ====== Auth Endpoints ======
-@api_router.post("/auth/register", response_model=UserResponse)
-async def register(payload: RegisterRequest, response: Response):
-    email = payload.email.lower()
-    existing = await db.users.find_one({"email": email})
-    if existing:
-        raise HTTPException(status_code=400, detail="Email já registado")
-    user_id = str(uuid.uuid4())
-    user_doc = {
-        "id": user_id,
-        "email": email,
-        "name": payload.name,
-        "password_hash": hash_password(payload.password),
-        "role": "user",
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    }
-    await db.users.insert_one(user_doc)
-    access = create_access_token(user_id, email)
-    refresh = create_refresh_token(user_id)
-    set_auth_cookies(response, access, refresh)
-    return UserResponse(id=user_id, email=email, name=payload.name, role="user")
+@api_router.post("/auth/register")
+async def register_disabled():
+    raise HTTPException(status_code=403, detail="Registo público desativado. Solicite uma conta ao administrador.")
 
 
 @api_router.post("/auth/login", response_model=UserResponse)
 async def login(payload: LoginRequest, response: Response):
     email = payload.email.lower()
+    # Rate limit
+    import time as _time
+    now = _time.time()
+    bucket = [t for t in _login_attempts.get(email, []) if now - t < LOGIN_WINDOW_SECONDS]
+    if len(bucket) >= LOGIN_MAX_ATTEMPTS:
+        raise HTTPException(status_code=429, detail="Demasiadas tentativas. Tente novamente daqui a alguns minutos.")
     user = await db.users.find_one({"email": email})
     if not user or not verify_password(payload.password, user["password_hash"]):
+        bucket.append(now)
+        _login_attempts[email] = bucket
         raise HTTPException(status_code=401, detail="Credenciais inválidas")
+    _login_attempts.pop(email, None)
     access = create_access_token(user["id"], email)
     refresh = create_refresh_token(user["id"])
     set_auth_cookies(response, access, refresh)
@@ -267,6 +272,9 @@ async def admin_create_user(payload: AdminUserCreate, _=Depends(require_admin)):
     if payload.role not in ("admin", "user"):
         raise HTTPException(status_code=400, detail="Papel inválido")
     email = payload.email.lower()
+    seed_email = os.environ.get("ADMIN_EMAIL", "admin@escola.pt").lower()
+    if email != seed_email and not email.endswith(f"@{ALLOWED_EMAIL_DOMAIN}"):
+        raise HTTPException(status_code=400, detail=f"Apenas contas com email @{ALLOWED_EMAIL_DOMAIN} são permitidas")
     existing = await db.users.find_one({"email": email})
     if existing:
         raise HTTPException(status_code=400, detail="Email já registado")
@@ -361,6 +369,7 @@ async def list_students(
     escola: Optional[str] = None,
     medida: Optional[str] = None,
     tipo_medida: Optional[str] = None,
+    ano_letivo: Optional[str] = None,
     current=Depends(get_current_user),
 ):
     query = {}
@@ -374,6 +383,8 @@ async def list_students(
         query["escola"] = {"$regex": escola, "$options": "i"}
     if medida:
         query["medidas_tags"] = medida
+    if ano_letivo:
+        query["ano_letivo"] = ano_letivo
     if tipo_medida:
         if tipo_medida == "sem_tipo":
             query["$or"] = [{"tipo_medida": ""}, {"tipo_medida": {"$exists": False}}, {"tipo_medida": None}]
@@ -654,6 +665,17 @@ async def stats(current=Depends(get_current_user)):
     seletiva_count = await db.students.count_documents({"tipo_medida": "Seletiva"})
     adicional_count = await db.students.count_documents({"tipo_medida": "Adicional"})
 
+    # Próximas revisões (<= 30 dias)
+    today = datetime.now(timezone.utc).date()
+    limit_date = (today + timedelta(days=30)).isoformat()
+    today_iso = today.isoformat()
+    revisao_proxima = await db.students.count_documents({
+        "data_revisao_doc": {"$gte": today_iso, "$lte": limit_date},
+    })
+    revisao_atrasada = await db.students.count_documents({
+        "data_revisao_doc": {"$ne": "", "$lt": today_iso},
+    })
+
     return {
         "kpis": {
             "total_alunos": total,
@@ -662,6 +684,8 @@ async def stats(current=Depends(get_current_user)):
             "alunos_com_medidas": com_medidas,
             "alunos_seletiva": seletiva_count,
             "alunos_adicional": adicional_count,
+            "revisao_proxima": revisao_proxima,
+            "revisao_atrasada": revisao_atrasada,
         },
         "por_turma": fmt(by_turma),
         "por_nivel": fmt(by_nivel),
@@ -728,6 +752,10 @@ async def on_startup():
     except Exception as e:
         logger.warning(f"Object storage init falhou (anexos indisponíveis): {e}")
 
+    # Schedule weekly backup
+    import asyncio as _asyncio
+    _asyncio.create_task(_backup_loop())
+
     # Seed admin
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@escola.pt").lower()
     admin_password = os.environ.get("ADMIN_PASSWORD", "admin123")
@@ -753,3 +781,40 @@ async def on_startup():
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+
+async def _backup_loop():
+    """Weekly backup of all collections to object storage as JSON."""
+    import asyncio as _asyncio
+    import json as _json
+    while True:
+        try:
+            await _asyncio.sleep(7 * 86400)  # 7 days
+            await _run_backup()
+        except _asyncio.CancelledError:
+            break
+        except Exception as e:
+            logger.error(f"Backup loop error: {e}")
+
+
+async def _run_backup():
+    import json as _json
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    collections = ["users", "students", "student_files"]
+    snapshot = {}
+    for coll in collections:
+        rows = await db[coll].find({}, {"_id": 0}).to_list(10000)
+        snapshot[coll] = rows
+    data = _json.dumps(snapshot, default=str, ensure_ascii=False, indent=2).encode("utf-8")
+    path = f"{APP_NAME}/backups/db-{timestamp}.json"
+    try:
+        put_object(path, data, "application/json")
+        logger.info(f"Backup gravado: {path} ({len(data)} bytes)")
+    except Exception as e:
+        logger.error(f"Backup falhou: {e}")
+
+
+@api_router.post("/admin/backup")
+async def trigger_backup(_=Depends(require_admin)):
+    await _run_backup()
+    return {"ok": True}

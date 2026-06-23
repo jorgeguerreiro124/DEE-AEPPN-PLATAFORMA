@@ -32,6 +32,7 @@ export default function Students() {
   const [escolaFilter, setEscolaFilter] = useState("");
   const [medidaFilter, setMedidaFilter] = useState("Todas");
   const [tipoMedidaFilter, setTipoMedidaFilter] = useState("Todos");
+  const [anoLetivoFilter, setAnoLetivoFilter] = useState("");
   const [allEscolas, setAllEscolas] = useState([]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -49,6 +50,7 @@ export default function Students() {
       if (escolaFilter.trim()) params.escola = escolaFilter.trim();
       if (medidaFilter !== "Todas") params.medida = medidaFilter;
       if (tipoMedidaFilter !== "Todos") params.tipo_medida = tipoMedidaFilter;
+      if (anoLetivoFilter.trim()) params.ano_letivo = anoLetivoFilter.trim();
       const { data } = await api.get("/students", { params });
       setItems(data);
     } catch (err) {
@@ -56,7 +58,7 @@ export default function Students() {
     } finally {
       setLoading(false);
     }
-  }, [search, nivel, turmaFilter, escolaFilter, medidaFilter, tipoMedidaFilter]);
+  }, [search, nivel, turmaFilter, escolaFilter, medidaFilter, tipoMedidaFilter, anoLetivoFilter]);
 
   const fetchEscolas = useCallback(async () => {
     try {
@@ -208,6 +210,15 @@ export default function Students() {
                 {allEscolas.map((e) => <option key={e} value={e} />)}
               </datalist>
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="overline">Ano Letivo</Label>
+            <Input
+              placeholder="ex.: 2025/26"
+              value={anoLetivoFilter}
+              onChange={(e) => setAnoLetivoFilter(e.target.value)}
+              data-testid="filter-ano-letivo"
+            />
           </div>
         </div>
       </Card>

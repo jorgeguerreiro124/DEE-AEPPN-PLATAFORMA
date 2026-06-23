@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   ArrowLeft, Pencil, Printer, User as UserIcon, School as SchoolIcon,
   Layers, GraduationCap, Calendar, ClipboardList, ShieldCheck, ListChecks,
-  FileText, UserCheck, Users as UsersIcon,
+  FileText, UserCheck, Users as UsersIcon, CalendarClock, BadgeCheck, AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import StudentFormDialog from "@/components/StudentFormDialog";
@@ -36,6 +36,52 @@ function formatDate(iso) {
   } catch {
     return iso;
   }
+}
+
+function formatShortDate(iso) {
+  if (!iso) return "";
+  // ISO YYYY-MM-DD without time
+  try {
+    const d = new Date(iso + (iso.length === 10 ? "T00:00:00" : ""));
+    return d.toLocaleDateString("pt-PT", { day: "2-digit", month: "long", year: "numeric" });
+  } catch {
+    return iso;
+  }
+}
+
+function daysUntil(iso) {
+  if (!iso) return null;
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(iso + (iso.length === 10 ? "T00:00:00" : ""));
+    target.setHours(0, 0, 0, 0);
+    return Math.round((target - today) / 86400000);
+  } catch {
+    return null;
+  }
+}
+
+function renderRevisaoAlert(iso) {
+  const days = daysUntil(iso);
+  if (days === null) return null;
+  if (days < 0) {
+    return (
+      <div className="mt-5 flex items-center gap-3 rounded-md border border-destructive/40 bg-destructive/10 text-destructive p-3 text-sm" data-testid="rev-alert-late">
+        <AlertTriangle className="size-4 shrink-0" />
+        Revisão em atraso há {Math.abs(days)} dia(s).
+      </div>
+    );
+  }
+  if (days <= 30) {
+    return (
+      <div className="mt-5 flex items-center gap-3 rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 p-3 text-sm" data-testid="rev-alert-soon">
+        <AlertTriangle className="size-4 shrink-0" />
+        Revisão prevista em {days} dia(s).
+      </div>
+    );
+  }
+  return null;
 }
 
 export default function StudentDetail() {
@@ -161,7 +207,12 @@ export default function StudentDetail() {
           <Field icon={ShieldCheck} label="Tipo de Medida" value={student.tipo_medida || "—"} testid="field-tipo" />
           <Field icon={UserCheck} label="Prof. Educação Especial" value={student.prof_educ_especial} testid="field-prof-ee" />
           <Field icon={UsersIcon} label="Diretor / Titular de Turma" value={student.diretor_turma} testid="field-dt" />
+          <Field icon={Calendar} label="Ano Letivo" value={student.ano_letivo} testid="field-ano-letivo" />
+          <Field icon={BadgeCheck} label="Estado do Processo" value={student.estado_processo} testid="field-estado" />
+          <Field icon={CalendarClock} label="Elaboração RTP/PEI" value={formatShortDate(student.data_elaboracao_doc)} testid="field-data-elab" />
+          <Field icon={CalendarClock} label="Próxima Revisão" value={formatShortDate(student.data_revisao_doc)} testid="field-data-rev" />
         </div>
+        {renderRevisaoAlert(student.data_revisao_doc)}
       </Card>
 
       {/* Medidas educativas */}

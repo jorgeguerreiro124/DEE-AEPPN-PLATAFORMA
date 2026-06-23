@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatApiErrorDetail } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
@@ -14,15 +13,11 @@ const BG_IMAGE =
   "https://images.unsplash.com/photo-1745776437727-f2c2d3594f8e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2OTV8MHwxfHNlYXJjaHwzfHxtb2Rlcm4lMjB1bml2ZXJzaXR5JTIwYnVpbGRpbmclMjBleHRlcmlvciUyMGRheXRpbWV8ZW58MHx8fHwxNzc3MzkwMzc0fDA&ixlib=rb-4.1.0&q=85";
 
 export default function Login() {
-  const { login, register } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState("login");
 
-  const [loginEmail, setLoginEmail] = useState("admin@escola.pt");
-  const [loginPwd, setLoginPwd] = useState("admin123");
-  const [regName, setRegName] = useState("");
-  const [regEmail, setRegEmail] = useState("");
-  const [regPwd, setRegPwd] = useState("");
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPwd, setLoginPwd] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e) => {
@@ -39,23 +34,8 @@ export default function Login() {
     }
   };
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await register(regName.trim(), regEmail.trim(), regPwd);
-      toast.success("Conta criada");
-      navigate("/", { replace: true });
-    } catch (err) {
-      toast.error(formatApiErrorDetail(err.response?.data?.detail) || err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
-      {/* Visual side */}
       <div
         className="relative hidden lg:flex p-12 text-white"
         style={{
@@ -84,95 +64,46 @@ export default function Login() {
         </div>
       </div>
 
-      {/* Form side */}
       <div className="flex items-center justify-center px-6 py-12">
         <Card className="w-full max-w-md p-8">
           <div className="mb-6">
             <h2 className="font-display text-2xl sm:text-3xl tracking-tight font-semibold">Bem-vindo</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Inicie sessão para gerir os seus alunos.
+              Inicie sessão com a sua conta institucional <span className="font-mono">@aeppn.pt</span>.
             </p>
           </div>
-          <Tabs value={mode} onValueChange={setMode}>
-            <TabsList className="grid grid-cols-2 w-full mb-6">
-              <TabsTrigger value="login" data-testid="tab-login">Entrar</TabsTrigger>
-              <TabsTrigger value="register" data-testid="tab-register">Registar</TabsTrigger>
-            </TabsList>
 
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <Input
-                    id="login-email"
-                    type="email"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    required
-                    data-testid="login-email-input"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Palavra-passe</Label>
-                  <Input
-                    id="login-password"
-                    type="password"
-                    value={loginPwd}
-                    onChange={(e) => setLoginPwd(e.target.value)}
-                    required
-                    data-testid="login-password-input"
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading} data-testid="login-submit-btn">
-                  {loading ? "A entrar…" : "Entrar"}
-                </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="register">
-              <form onSubmit={handleRegister} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="reg-name">Nome</Label>
-                  <Input
-                    id="reg-name"
-                    value={regName}
-                    onChange={(e) => setRegName(e.target.value)}
-                    required
-                    data-testid="register-name-input"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="reg-email">Email</Label>
-                  <Input
-                    id="reg-email"
-                    type="email"
-                    value={regEmail}
-                    onChange={(e) => setRegEmail(e.target.value)}
-                    required
-                    data-testid="register-email-input"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="reg-password">Palavra-passe</Label>
-                  <Input
-                    id="reg-password"
-                    type="password"
-                    minLength={6}
-                    value={regPwd}
-                    onChange={(e) => setRegPwd(e.target.value)}
-                    required
-                    data-testid="register-password-input"
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading} data-testid="register-submit-btn">
-                  {loading ? "A criar…" : "Criar conta"}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="login-email">Email</Label>
+              <Input
+                id="login-email"
+                type="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="nome@aeppn.pt"
+                required
+                data-testid="login-email-input"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="login-password">Palavra-passe</Label>
+              <Input
+                id="login-password"
+                type="password"
+                value={loginPwd}
+                onChange={(e) => setLoginPwd(e.target.value)}
+                required
+                data-testid="login-password-input"
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={loading} data-testid="login-submit-btn">
+              {loading ? "A entrar…" : "Entrar"}
+            </Button>
+          </form>
 
           <div className="text-xs text-muted-foreground mt-6 text-center">
-            Demonstração: <span className="font-mono">admin@escola.pt</span> / <span className="font-mono">admin123</span>
+            Sem conta? Solicite acesso ao administrador.
           </div>
         </Card>
       </div>

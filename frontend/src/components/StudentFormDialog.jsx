@@ -15,6 +15,7 @@ import { toast } from "sonner";
 
 const NIVEIS = ["Pré-escolar", "1.º Ciclo", "2.º Ciclo", "3.º Ciclo", "Secundário"];
 const TIPOS_MEDIDA = ["Seletiva", "Adicional"];
+const ESTADOS_PROCESSO = ["Em elaboração", "Aprovado", "Em revisão", "Concluído"];
 
 const empty = {
   nome: "",
@@ -22,9 +23,13 @@ const empty = {
   turma: "",
   escola: "",
   nivel_ensino: "1.º Ciclo",
+  ano_letivo: "",
   prof_educ_especial: "",
   diretor_turma: "",
   tipo_medida: "",
+  estado_processo: "",
+  data_elaboracao_doc: "",
+  data_revisao_doc: "",
   medidas_tags: [],
   adaptacoes_avaliacao: [],
   medidas_notas: "",
@@ -70,9 +75,13 @@ export default function StudentFormDialog({ open, onOpenChange, student, tags, a
         turma: form.turma.trim(),
         escola: form.escola.trim(),
         nivel_ensino: form.nivel_ensino,
+        ano_letivo: (form.ano_letivo || "").trim(),
         prof_educ_especial: (form.prof_educ_especial || "").trim(),
         diretor_turma: (form.diretor_turma || "").trim(),
         tipo_medida: form.tipo_medida || "",
+        estado_processo: form.estado_processo || "",
+        data_elaboracao_doc: form.data_elaboracao_doc || "",
+        data_revisao_doc: form.data_revisao_doc || "",
         medidas_tags: form.medidas_tags,
         adaptacoes_avaliacao: form.adaptacoes_avaliacao || [],
         medidas_notas: form.medidas_notas || "",
@@ -176,6 +185,53 @@ export default function StudentFormDialog({ open, onOpenChange, student, tags, a
                 onChange={(e) => update("diretor_turma", e.target.value)}
                 placeholder="Nome do DT ou professor titular"
                 data-testid="student-dt-input"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ano-letivo">Ano Letivo</Label>
+              <Input
+                id="ano-letivo"
+                value={form.ano_letivo || ""}
+                onChange={(e) => update("ano_letivo", e.target.value)}
+                placeholder="ex.: 2025/26"
+                data-testid="student-ano-letivo-input"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="estado-proc">Estado do Processo</Label>
+              <Select
+                value={form.estado_processo || "__none"}
+                onValueChange={(v) => update("estado_processo", v === "__none" ? "" : v)}
+              >
+                <SelectTrigger id="estado-proc" data-testid="student-estado-select">
+                  <SelectValue placeholder="Selecionar…" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">— Nenhum —</SelectItem>
+                  {ESTADOS_PROCESSO.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="data-elab">Data de Elaboração (RTP/PEI)</Label>
+              <Input
+                id="data-elab"
+                type="date"
+                value={form.data_elaboracao_doc || ""}
+                onChange={(e) => update("data_elaboracao_doc", e.target.value)}
+                data-testid="student-data-elab-input"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="data-rev">Data de Revisão</Label>
+              <Input
+                id="data-rev"
+                type="date"
+                value={form.data_revisao_doc || ""}
+                onChange={(e) => update("data_revisao_doc", e.target.value)}
+                data-testid="student-data-rev-input"
               />
             </div>
           </div>
