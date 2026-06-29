@@ -1,0 +1,45 @@
+{
+  "summary": "Static validation of CI/CD config (deploy.yml, firebase.json, .gitignore, CI-CD.md) plus smoke test of preview app. All 9 requested checks PASS. Preview app fully functional: login API returns 200, sets httpOnly+Secure access_token/refresh_token cookies, /api/auth/me returns 401 without cookies and 200 with them, UI redirects to dashboard and renders stats correctly with no console errors.",
+  "static_checks": {
+    "yaml_valid": true,
+    "jobs_present": ["deploy-backend", "deploy-frontend"],
+    "frontend_needs_backend": true,
+    "frontend_job_level_env_REACT_APP_BACKEND_URL": "${{ needs.deploy-backend.outputs.url }} (set at job-level env, not just step)",
+    "backend_outputs_url": "${{ steps.deploy.outputs.url }}",
+    "strip_predeploy_step_present": true,
+    "strip_step_modifies_firebase_json_predeploy": true,
+    "firebase_deploy_flags": "--only hosting,firestore:rules,firestore:indexes --project ${{ env.PROJECT_ID }} (resolves to dee-eppn-plataforma via top-level env)",
+    "firebase_json_keeps_predeploy_for_local": true,
+    "gitignore_env_block_count": 1,
+    "gitignore_has_literal_dash_e": false,
+    "gitignore_includes_required_paths": ["frontend/build/", "frontend/.env.production", ".firebase/", "firebase-debug.log", "backend/secrets/", "*-sa.json"],
+    "cicd_md_documents_5_secrets": ["GCP_SA_KEY", "JWT_SECRET", "ADMIN_EMAIL", "ADMIN_PASSWORD", "EMERGENT_LLM_KEY"]
+  },
+  "smoke_test_preview": {
+    "frontend_loads": true,
+    "title": "DEE \u2014 AEPPN | Gest\u00e3o Pedag\u00f3gica",
+    "login_api_status": 200,
+    "httponly_cookies_set": ["access_token (HttpOnly, Secure, SameSite=none, Max-Age=86400)", "refresh_token (HttpOnly, Secure, SameSite=none, Max-Age=604800)"],
+    "auth_me_without_cookie_returns": 401,
+    "auth_me_with_cookie_returns": 200,
+    "ui_login_redirects_to_dashboard": true,
+    "dashboard_renders_stats": "7 alunos, 3 escolas, 6 turmas, charts visible",
+    "console_errors": []
+  },
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "deploy.yml: in the Cloud Run --set-env-vars line, JWT_SECRET/ADMIN_PASSWORD/EMERGENT_LLM_KEY are interpolated directly into the shell command. If any secret contains a comma it would be split across env vars. Consider passing via --set-secrets from Secret Manager or escaping. Not blocking for current secrets.",
+    "deploy.yml: deploy-frontend re-runs on every push to main even when only backend changed; the design choice is acceptable (URL stability) but doc note in CI-CD.md is accurate.",
+    "Strip-predeploy step uses node -e inline; minor maintainability concern but works correctly and is well commented."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@escola.pt / Admin123 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None created; used existing seeded admin and 7 students.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "This iteration validated only CI/CD config changes (YAML/JSON/gitignore/docs) plus a non-destructive smoke test against the preview URL. No real deploy was attempted to GCP/Firebase (no credentials available). Backend (port 8001) and frontend (port 3000) are running under supervisor and the public preview at https://escola-admin-6.preview.emergentagent.com is healthy. If a future iteration tests the actual deploy, ensure GCP_SA_KEY secret has the IAM roles listed in /app/CI-CD.md."
+}
