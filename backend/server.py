@@ -17,16 +17,15 @@ import jwt
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, Query, UploadFile, File, Header
 from fastapi.responses import StreamingResponse
 from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field, EmailStr
 
 from storage import init_storage, put_object, get_object, APP_NAME
+from fsdb import db  # Firestore-backed data layer
 
 
 # ---- Mongo ----
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+# Replaced by Firestore (see fsdb.py). The variables below are no longer used
+# but kept to avoid breaking environment validation on startup.
 
 # ---- App ----
 app = FastAPI(title="Gestão Pedagógica API")
@@ -784,7 +783,24 @@ async def on_startup():
     # Seed admin
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@escola.pt").lower()
     admin_password = os.environ.get("ADMIN_PASSWORD", "admin123")
-    existing = await db.users.find_one({"email": admin_email})
+    # Deduplicate any prior duplicate admin docs (migration artifact)
+    admin_dups = await db.users.find({"email": admin_email}).to_list(50)
+    if len(admin_dups) > 1:
+        # Keep the one with current password matching env; delete the rest
+        keep = None
+        for d in admin_dups:
+            if verify_password(admin_password, d["password_hash"]):
+                keep = d
+                break
+        if keep is None:
+            keep = admin_dups[0]
+        for d in admin_dups:
+            if d["id"] != keep["id"]:
+                await db.users.delete_one({"id": d["id"]})
+                logger.info(f"Removed duplicate admin {d['id']}")
+        existing = keep
+    else:
+        existing = admin_dups[0] if admin_dups else None
     if not existing:
         await db.users.insert_one({
             "id": str(uuid.uuid4()),
@@ -805,7 +821,7 @@ async def on_startup():
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
-    client.close()
+    pass
 
 
 async def _backup_loop():

@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // All writes happen via the backend (Cloud Run service account), so
+    // client direct access is disabled. The frontend talks to the FastAPI
+    // backend, not Firestore.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

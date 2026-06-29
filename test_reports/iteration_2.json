@@ -1,0 +1,63 @@
+{
+  "summary": "Verified Firebase Hosting deploy artefacts and config + confirmed the app still works on preview after the public/index.html edit. All 6 requested checks pass.",
+  "verifications_performed": {
+    "build_artefacts": {
+      "frontend_build_dir_exists": true,
+      "index_html_present": true,
+      "static_js_bundle": "/app/frontend/build/static/js/main.11f1b68f.js",
+      "static_css_bundle": "/app/frontend/build/static/css/main.bf3f6c31.css",
+      "build_index_has_root_div": true,
+      "build_index_has_title_DEE_AEPPN": true,
+      "build_index_has_no_firebase_welcome": true
+    },
+    "public_index_html": {
+      "closing_body_tags_count": 1,
+      "closing_html_tags_count": 1,
+      "duplicate_tags_fixed": true,
+      "title_correct": true,
+      "root_div_present": true
+    },
+    "firebase_json": {
+      "hosting_public": "frontend/build (OK)",
+      "spa_rewrite": "** -> /index.html (OK)",
+      "predeploy_hook_runs_yarn_build": true,
+      "cache_control_headers_present": true
+    },
+    "firebaserc": {
+      "default_project": "dee-eppn-plataforma (OK)"
+    },
+    "local_static_serve_test": {
+      "command": "npx serve -s /app/frontend/build -l 5070",
+      "root_status": 200,
+      "root_serves_react_bundle_ref": "/static/js/main.11f1b68f.js",
+      "root_no_firebase_welcome": true,
+      "spa_fallback_route_/students_status": 200,
+      "spa_fallback_returns_same_html_as_root": true
+    },
+    "preview_url_app_functional": {
+      "url": "https://escola-admin-6.preview.emergentagent.com",
+      "login_screen_loads": true,
+      "bem_vindo_visible": true,
+      "email_password_form_present": true,
+      "login_api_status": 200,
+      "redirected_to_dashboard": true,
+      "dashboard_visible_widgets": ["Painel/Visão Geral", "Total de Alunos: 7", "Escolas: 3", "Turmas: 6", "Alunos com Medidas: 7", "Gráficos", "Medidas Educativas Atribuídas"]
+    }
+  },
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "/app/.gitignore contains the same '# Environment and credential files' block duplicated ~10 times with stray '-e' literal lines (appears to be result of repeated `echo -e >>` appends). Not blocking, but should be deduped: a single block covering .env, .env.*, *.env, credentials.json, *.pem, *.key, .credentials is enough. The Firebase exclusions (frontend/build/, .env.production, .firebase/, firebase-debug.log) at the bottom are correct.",
+    "DEPLOY.md notes that frontend/.env.production is gitignored (and it is). Make sure the GitHub Actions workflow injects REACT_APP_BACKEND_URL at build time, otherwise CRA will bake an empty backend URL into the bundle and the deployed Firebase Hosting site will hit relative /api/* (failing). Recommend asserting this in the workflow."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@escola.pt / Admin123 (working)",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Firebase deploy fix is fully validated: build artefacts exist, firebase.json/.firebaserc are correct, SPA rewrite works locally on `npx serve`, and the preview URL still logs in admin@escola.pt and shows the dashboard. No code changes made by testing agent.",
+  "rca_of_the_issue": "Root cause of the original 'Welcome to Firebase' page: `firebase deploy` was run before `yarn build`, so frontend/build was missing/empty and Firebase Hosting served its default placeholder. Fix applied by main agent (predeploy hook in firebase.json + .firebaserc + clean public/index.html + regenerated build) is correct and verified."
+}

@@ -1,0 +1,12 @@
+# Secrets / credentials
+secrets/
+*-sa.json
+firebase-sa.json
+
+# Backups
+*.dump
+*.bak
+
+# IDE
+.idea/
+.vscode/
