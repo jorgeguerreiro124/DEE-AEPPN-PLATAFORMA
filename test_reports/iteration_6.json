@@ -1,0 +1,63 @@
+{
+  "summary": "Static validation of /app/.github/workflows/deploy.yml after upgrading GitHub Actions to Node-24-native versions, plus smoke test of the Firebase Hosting site. YAML parses cleanly, all action versions are correct, workflow structure intact, and Firebase site serves the real React app (not the Firebase welcome page).",
+  "validation_results": {
+    "yaml_syntax": "VALID — yaml.safe_load succeeded; jobs detected: ['deploy-backend', 'deploy-frontend']",
+    "action_versions": {
+      "actions/checkout@v5": "2 occurrences (line 24 in deploy-backend, line 92 in deploy-frontend) — OK",
+      "google-github-actions/auth@v3": "2 occurrences (line 27 in deploy-backend, line 109 in deploy-frontend) — OK",
+      "google-github-actions/setup-gcloud@v3": "1 occurrence (line 31, deploy-backend only) — OK",
+      "actions/setup-node@v4": "1 occurrence (line 94, kept as-is per request) — OK",
+      "deprecated_versions_check": "grep for google-github-actions/*@v2 or @v4 returned ZERO matches — no stale Node-20 Google actions remain"
+    },
+    "workflow_structure": {
+      "jobs_present": "deploy-backend + deploy-frontend (with needs: deploy-backend)",
+      "job_level_env_REACT_APP_BACKEND_URL": "Present at lines 89-90 in deploy-frontend (correctly scoped at job level so both build step and firebase predeploy see it)",
+      "enable_apis_step_before_artifact_registry": "Confirmed — 'Enable required GCP APIs (idempotent)' at line 33 precedes 'Ensure Artifact Registry repo exists' at line 43",
+      "strip_predeploy_before_firebase_deploy": "Confirmed — 'Strip predeploy hook (CI already built)' at line 116 precedes 'Deploy Hosting + Firestore rules + indexes' at line 122"
+    },
+    "firebase_smoke_test": {
+      "url": "https://dee-eppn-plataforma.web.app/",
+      "http_status": 200,
+      "html_size_bytes": 4868,
+      "title": "DEE — AEPPN | Gestão Pedagógica",
+      "main_js_status": "200 (925125 bytes)",
+      "main_css_status": "200 (59278 bytes)",
+      "root_div_rendered_content_length": 4149,
+      "react_app_detected": true,
+      "is_firebase_welcome_page": false,
+      "visible_content": "Login page renders correctly: 'Departamento de Educação Especial', 'GESTÃO PEDAGÓGICA INTEGRADA', 'Organize as escolas. Apoie cada aluno.', 'AE PROF. PAULA NOGUEIRA — OLHÃO', 'Bem-vindo / Inicie sessão com a sua conta institucional @aeppn.pt', Email/Palavra-passe form with 'Entrar' button. No login attempted (per request)."
+    }
+  },
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Frontend → Backend (informational, NOT in scope of this iteration)",
+        "issue": "Deployed Firebase site calls https://escola-admin-6.preview.emergentagent.com/api/auth/me (the preview-env backend URL baked into the bundle), and that backend responds with Access-Control-Allow-Origin: '*' while the request uses credentials: 'include', so the browser blocks it with CORS error. This means the current Firebase bundle was NOT built with the production Cloud Run URL — consistent with the user's note that the backend deploy job is still failing (IAM/APIs pending). Once deploy-backend succeeds, deploy-frontend will rebuild with the correct Cloud Run URL via the job-level REACT_APP_BACKEND_URL env and this will go away.",
+        "affected_selectors": []
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "No code changes needed for this iteration — YAML upgrade is correctly applied and the site is healthy.",
+    "User still needs to apply the 2 IAM roles (roles/artifactregistry.admin + roles/serviceusage.serviceUsageAdmin) to the aeppn-deploy-290 service account and ensure the APIs in the 'Enable required GCP APIs' step are activatable — this is the real cause of the deploy-backend job failing (NOT the Node 20 warning).",
+    "After the next successful run of the full workflow, re-smoke the Firebase site to confirm the bundle now talks to the new Cloud Run URL (CORS error in console should disappear)."
+  ],
+  "critical_code_review_comments": [
+    "deploy.yml is consistent and idempotent: Enable APIs → Ensure AR repo → Configure Docker → Build/Push → Deploy. Good ordering.",
+    "REACT_APP_BACKEND_URL is correctly scoped at job level in deploy-frontend (lines 89-90), so both the explicit 'yarn build' step and any firebase.json predeploy hook (if it ever comes back) inherit it. Good design.",
+    "Mixing actions/setup-node@v4 (still Node-20-based action wrapper) with checkout/auth/setup-gcloud @v5/@v3 is fine — setup-node@v4 is still actively supported and was explicitly kept per the iteration request.",
+    "Minor: 'npm install -g firebase-tools@13' on line 114 uses npm rather than yarn; that's standard practice for global CLI tools and not a violation of the project's yarn-first rule (which applies to project deps)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (no backend pytest run in this iteration — static validation only, per request)", "frontend": "100% (smoke test passed: React app served, not Firebase welcome page)"},
+  "test_credentials": "N/A — no login attempted per iteration request.",
+  "seed_data_creation": "None.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Iteration 6 was a pure validation pass after upgrading actions/checkout to v5 and google-github-actions/{auth,setup-gcloud} to v3 in /app/.github/workflows/deploy.yml. No code/test files were modified. Firebase Hosting still serves the React app (login screen). The real blocker remains the user-side IAM + APIs work needed for the deploy-backend job (covered in iteration_5). The CORS error visible in browser console on the deployed site is expected and will resolve automatically once a successful end-to-end deploy rebuilds the frontend with the production Cloud Run URL.",
+  "rca of the issue": "N/A — no bug to RCA in this iteration. The Node 20 deprecation warning that triggered this iteration was informational only (GitHub auto-promotes to Node 24); the upgrade silences the warning and aligns with best practice."
+}
