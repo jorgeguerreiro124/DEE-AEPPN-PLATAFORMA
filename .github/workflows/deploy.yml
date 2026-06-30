@@ -30,6 +30,18 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v3
 
+      - name: Verify SA credentials work (fail-fast)
+        run: |
+          echo "Identity:"
+          gcloud auth list --format='value(account)' 2>&1 || true
+          echo ""
+          echo "Testing JWT signing by requesting an access token..."
+          if ! gcloud auth print-access-token >/dev/null 2>&1; then
+            echo "::error::GCP_SA_KEY is malformed (Invalid JWT Signature). The private_key field of your JSON is corrupted. Most likely cause: paste corruption when pasting into GitHub Secret. Re-generate the key and re-upload using GitHub CLI: 'gh secret set GCP_SA_KEY --body \"\$(cat key.json)\" -R OWNER/REPO'"
+            exit 1
+          fi
+          echo "Access token obtained successfully."
+
       - name: Enable required GCP APIs (idempotent)
         run: |
           gcloud services enable \

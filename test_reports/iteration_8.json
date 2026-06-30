@@ -1,0 +1,30 @@
+{
+  "summary": "Static validation of CI/CD workflow change (new fail-fast SA credential verification step) + public smoke test of Firebase-hosted frontend. No backend/server.py changes were tested as instructed. All 4 review items pass.",
+  "validation_results": {
+    "yaml_validity": "PASS — /app/.github/workflows/deploy.yml parses successfully via PyYAML",
+    "new_step_present_and_ordered": "PASS — Step 'Verify SA credentials work (fail-fast)' is at position 4 in deploy-backend job, sits BETWEEN 'setup-gcloud' (pos 3) and 'Enable required GCP APIs (idempotent)' (pos 5). It invokes `gcloud auth print-access-token >/dev/null 2>&1` and on failure emits an `::error::` GitHub annotation with actionable remediation message instructing the user to re-upload GCP_SA_KEY via `gh secret set GCP_SA_KEY --body \"$(cat key.json)\" -R OWNER/REPO`, then `exit 1` to fail fast.",
+    "backend_steps_order": "PASS — checkout → auth → setup-gcloud → Verify SA credentials → Enable APIs → Ensure Artifact Registry → Configure Docker → Build & Push → Deploy to Cloud Run (exactly as required)",
+    "frontend_job_intact": "PASS — deploy-frontend has `needs: deploy-backend` and job-level `env: REACT_APP_BACKEND_URL: ${{ needs.deploy-backend.outputs.url }}`, ensuring the URL is available both to the explicit yarn build step and to any predeploy hook in firebase.json (although a separate step strips predeploy in CI to avoid double-build).",
+    "firebase_site_smoke": "PASS — https://dee-eppn-plataforma.web.app returns HTTP 200, content-type text/html, serves the React app (title='DEE — AEPPN | Gestão Pedagógica', contains `<div id=\"root\">`, loads /static/js/main.11f1b68f.js bundle and /static/css/main.bf3f6c31.css). NOT the Firebase 'Welcome' default page."
+  },
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "critical_code_review_comments": [
+    "Workflow uses google-github-actions/auth@v3 with credentials_json (JSON SA key). User should migrate to Workload Identity Federation (keyless) when possible — this would eliminate the entire class of 'private_key paste corruption' bugs the new fail-fast step is designed to catch.",
+    "The `::error::` annotation message uses single-line escaping which renders correctly in GitHub Actions UI. Verified the inner `\\$(cat key.json)` escape is correct so the literal `$(cat key.json)` appears in the error message rather than being expanded by bash at runtime.",
+    "Step 'Strip predeploy hook' modifies firebase.json in-place on the runner only — safe (ephemeral runner, not committed). Good pattern.",
+    "Backend Cloud Run deploy passes secrets via --set-env-vars which logs to the deploy step output. Consider --set-secrets referencing Secret Manager instead, so JWT_SECRET/ADMIN_PASSWORD are never visible in CI logs."
+  ],
+  "test_report_links": [],
+  "action_items": [
+    "USER ACTION (outside agent scope): Regenerate the SA JSON key for aeppn-deploy-290@dee-eppn-plataforma.iam.gserviceaccount.com and re-upload it to the GitHub Secret GCP_SA_KEY using GitHub CLI (`gh secret set GCP_SA_KEY --body \"$(cat key.json)\" -R OWNER/REPO`) rather than browser paste to avoid newline/quote corruption in the PEM private_key field. The new fail-fast step will surface this clearly on the next push if the key is still corrupted."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (no API testing performed per instructions)", "frontend": "100% (smoke check)"},
+  "test_credentials": "Not used — instructions explicitly said not to test login (CORS architectural fix pending).",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "CI/CD workflow at /app/.github/workflows/deploy.yml is structurally valid and contains the new fail-fast SA credentials check between setup-gcloud and Enable APIs. The Firebase-hosted frontend at https://dee-eppn-plataforma.web.app is live and serves the React bundle. Backend on Cloud Run has not yet been deployed successfully (blocked by user re-uploading GCP_SA_KEY). Once user re-uploads the SA key and CI passes, next testing agent should perform full backend smoke (Cloud Run URL from workflow output) + login flow + CORS verification.",
+  "rca_of_the_issue": "Original error 'invalid_grant: Invalid JWT Signature' from gcloud was caused by corruption of the private_key PEM block inside the GCP_SA_KEY JSON secret — most likely the newlines (\\n) inside the BEGIN/END PRIVATE KEY block were altered during browser paste into the GitHub Secrets UI (some browsers normalize whitespace or smart-quote characters). The JSON itself remained syntactically valid, so google-github-actions/auth@v3 accepted it, but the resulting RSA key could not produce a JWT signature Google's OAuth endpoint would verify. The fix in deploy.yml does NOT solve the corruption itself (that's a user action to re-upload) but converts a confusing late failure ('services.enable failed') into an explicit early failure with a clear remediation instruction, satisfying the fail-fast principle."
+}
