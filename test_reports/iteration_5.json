@@ -1,0 +1,29 @@
+{
+  "summary": "Static validation of CI/CD workflow fix (iteration 5) + smoke test of deployed Firebase site. All 7 validation tasks PASS. No backend/frontend code changes were tested (per instructions: only workflow YAML + CI-CD.md + public site smoke).",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": { "ui_bugs": [], "integration_issues": [], "design_issues": [] },
+  "validation_results": {
+    "1_yaml_syntax_valid": "PASS - python yaml.safe_load succeeds",
+    "2_enable_apis_step_exists_before_ensure_repo": "PASS - 'Enable required GCP APIs (idempotent)' is step index 3, 'Ensure Artifact Registry repo exists' is step index 4. All 5 required APIs present: run, artifactregistry, cloudbuild, firebasehosting, firestore.googleapis.com.",
+    "3_ensure_repo_uses_if_else_not_pipe_or": "PASS - uses 'if gcloud ... ; then ... else ... fi' structure. No '||' fallback. Messages 'Repo X already exists.' and 'Creating repo X...' present.",
+    "4_cicd_md_iam_roles_correct": "PASS - all 7 roles present (run.admin, artifactregistry.admin, storage.admin, iam.serviceAccountUser, serviceusage.serviceUsageAdmin, firebase.admin, datastore.user). String 'roles/artifactregistry.writer' is NOT present as an active role binding (it is only mentioned in explanatory text as 'writer NÃO chega').",
+    "5_gcloud_loop_has_7_correct_roles": "PASS - bash loop 'for role in ...' contains exactly the 7 expected roles, no writer role, no extra/wrong roles.",
+    "6_workflow_structure_intact": "PASS - 2 jobs (deploy-backend, deploy-frontend); deploy-frontend.needs = deploy-backend; deploy-frontend job-level env REACT_APP_BACKEND_URL = ${{ needs.deploy-backend.outputs.url }}; step 'Strip predeploy hook (CI already built)' present and removes hosting.predeploy from firebase.json.",
+    "7_smoke_test_deployed_site": "PASS - https://dee-eppn-plataforma.web.app returns HTTP 200, contains <div id='root'>, references React bundle /static/js/main.<hash>.js, title is 'DEE — AEPPN | Gestão Pedagógica'. NOT the Firebase welcome page. Login not tested per instructions."
+  },
+  "test_report_links": ["/app/test_reports/iteration_5.json"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Workflow now correctly enables APIs before attempting Artifact Registry describe/create — this addresses the root cause if the original failure was either (a) artifactregistry API not enabled, or (b) SA missing artifactregistry.admin. The user must STILL re-run the IAM binding loop from CI-CD.md (or grant roles/serviceusage.serviceUsageAdmin + roles/artifactregistry.admin manually) before the next push; the workflow change alone does not grant the SA those roles.",
+    "Minor (non-blocking): the 'Enable required GCP APIs' step itself requires roles/serviceusage.serviceUsageAdmin on the SA. If the user's SA still lacks it, the new step will fail at the very same point with a clearer error. Documentation already reflects this — good.",
+    "Optional improvement: consider adding 'continue-on-error: false' explicitly or echoing 'gcloud config list account' before the enable step to make permission failures easier to diagnose in logs. Not required."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "n/a (no backend tested)", "frontend": "100% (smoke only)" },
+  "test_credentials": "not used (login intentionally skipped per request)",
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration 5 was purely a CI/CD workflow + docs validation + public site smoke. No code in /app/backend or /app/frontend was modified or tested. If the next iteration needs to verify that the GitHub Actions deploy actually succeeded, it must be triggered from the user's GitHub repo (we cannot run it from here). Then verify backend at the Cloud Run URL printed in deploy-backend outputs.",
+  "rca of the issue": "Original CI failure exit code 1 at ~25s in deploy-backend was most likely the 'gcloud artifacts repositories create' call: either (a) artifactregistry.googleapis.com not enabled on the project (first-time use), or (b) SA aeppn-deploy-290 had roles/artifactregistry.writer instead of roles/artifactregistry.admin (writer can push but not create repos). Fix in this iteration: added explicit 'gcloud services enable' step before the create-repo step (idempotent, addresses (a)) and corrected CI-CD.md to require artifactregistry.admin + serviceusage.serviceUsageAdmin (addresses (b)). User action still required: re-run the IAM bindings loop in CI-CD.md against their SA, then push to main."
+}

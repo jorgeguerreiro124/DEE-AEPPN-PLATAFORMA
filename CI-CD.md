@@ -41,16 +41,17 @@ Adicione **estes 5 secrets** (sem o primeiro o deploy falha imediatamente):
 
 A `aeppn-deploy-290@...` precisa de:
 - **Cloud Run Admin** (`roles/run.admin`)
-- **Artifact Registry Writer** (`roles/artifactregistry.writer`)
+- **Artifact Registry Administrator** (`roles/artifactregistry.admin`) — `writer` **NÃO chega** porque o workflow tem de **criar** o repositório na primeira execução
 - **Storage Admin** (`roles/storage.admin`) — para Cloud Build
 - **Service Account User** (`roles/iam.serviceAccountUser`)
+- **Service Usage Admin** (`roles/serviceusage.serviceUsageAdmin`) — para activar APIs (`run`, `artifactregistry`, etc.)
 - **Firebase Admin** (`roles/firebase.admin`) — para deploy Hosting + Firestore rules
 - **Cloud Datastore User** (`roles/datastore.user`) — runtime Firestore
 
 Comando rápido (substitua `PROJECT_ID=dee-eppn-plataforma`):
 ```bash
 SA="aeppn-deploy-290@dee-eppn-plataforma.iam.gserviceaccount.com"
-for role in run.admin artifactregistry.writer storage.admin iam.serviceAccountUser firebase.admin datastore.user; do
+for role in run.admin artifactregistry.admin storage.admin iam.serviceAccountUser serviceusage.serviceUsageAdmin firebase.admin datastore.user; do
   gcloud projects add-iam-policy-binding dee-eppn-plataforma --member="serviceAccount:$SA" --role="roles/$role"
 done
 ```

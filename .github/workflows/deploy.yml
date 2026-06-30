@@ -30,14 +30,30 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v2
 
+      - name: Enable required GCP APIs (idempotent)
+        run: |
+          gcloud services enable \
+            run.googleapis.com \
+            artifactregistry.googleapis.com \
+            cloudbuild.googleapis.com \
+            firebasehosting.googleapis.com \
+            firestore.googleapis.com \
+            --project=${{ env.PROJECT_ID }}
+
       - name: Ensure Artifact Registry repo exists
         run: |
-          gcloud artifacts repositories describe ${{ env.AR_REPO }} \
-            --location=${{ env.REGION }} --project=${{ env.PROJECT_ID }} \
-            || gcloud artifacts repositories create ${{ env.AR_REPO }} \
-                 --repository-format=docker \
-                 --location=${{ env.REGION }} \
-                 --project=${{ env.PROJECT_ID }}
+          if gcloud artifacts repositories describe ${{ env.AR_REPO }} \
+               --location=${{ env.REGION }} --project=${{ env.PROJECT_ID }} \
+               >/dev/null 2>&1; then
+            echo "Repo ${{ env.AR_REPO }} already exists."
+          else
+            echo "Creating repo ${{ env.AR_REPO }}..."
+            gcloud artifacts repositories create ${{ env.AR_REPO }} \
+              --repository-format=docker \
+              --location=${{ env.REGION }} \
+              --project=${{ env.PROJECT_ID }} \
+              --description="AEPPN backend Docker images"
+          fi
 
       - name: Configure Docker
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
