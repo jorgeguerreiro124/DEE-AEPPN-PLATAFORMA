@@ -1,0 +1,37 @@
+{
+  "summary": "Verified Firebase Hosting deploy fix for https://dee-eppn-plataforma.web.app. All 9 review-request assertions pass: 'Welcome to Firebase Hosting' is ABSENT, title is correct, React mounts (#root has content), login UI renders with 'Bem-vindo' + email/password form, JS+CSS assets serve 200 with correct content-types, SPA rewrite (/students) returns 200 with same root HTML, and preview URL login still works end-to-end producing the dashboard. Known architectural CORS issue from Firebase->preview backend reproduced and recorded as expected (not fixed, as per main-agent instruction).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "OPTIONS https://escola-admin-6.preview.emergentagent.com/api/auth/login (from origin https://dee-eppn-plataforma.web.app)", "issue": "Preview ingress returns Access-Control-Allow-Origin: * which is incompatible with credentials:include — login from Firebase fails with CORS preflight. KNOWN architectural limitation (preview ingress overrides FastAPI CORSMiddleware). Fix requires deploying backend to Cloud Run as planned. Do NOT modify server.py."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Firebase production login -> preview backend", "issue": "CORS preflight blocked: 'Access to XMLHttpRequest at https://escola-admin-6.preview.emergentagent.com/api/auth/login from origin https://dee-eppn-plataforma.web.app has been blocked by CORS policy: Response to preflight request doesn't pass access control check: The value of the Access-Control-Allow-Origin header in the response must not be the wildcard * when the requests credentials mode is include.' Expected per review request — architectural, not a regression.", "affected_selectors": ["button[type='submit']"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_4.json"],
+  "action_items": [
+    "(Optional, already planned) Deploy backend to Cloud Run via GitHub Actions workflow so Firebase frontend can call same-origin/CORS-correct backend. No code change needed in server.py — FastAPI CORSMiddleware is already correct (allow_origins=[FRONTEND_URL, localhost:3000], allow_credentials=True). The blocker is the preview ingress wildcard."
+  ],
+  "critical_code_review_comments": [
+    "firebase.json predeploy hook for CI removal is handled correctly; deployed assets resolve and SPA rewrite works.",
+    "Build asset hashes (main.11f1b68f.js, main.bf3f6c31.css) served with correct text/javascript and text/css content-types — no MIME issues."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (preview login + API confirmed working)", "frontend": "100% (Firebase hosting bug fully resolved; React app loads + renders login UI; CORS to preview is the only failure and is expected/architectural)"},
+  "test_credentials": "admin@escola.pt / Admin123 (works on preview URL; fails on Firebase production by CORS as expected)",
+  "seed_data_creation": "None. Used existing seeded admin and existing dashboard data (7 students, 3 schools, 6 turmas).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Firebase Hosting deploy verified at iteration_4. Welcome-to-Firebase issue is fully gone. Next task is likely backend deploy to Cloud Run to unblock production login; after that, retest login at https://dee-eppn-plataforma.web.app with admin@escola.pt / Admin123. Title selector: <title>DEE — AEPPN | Gestão Pedagógica</title>. Login UI selectors: input[type='email'], input[type='password'], button[type='submit'] (Entrar). Dashboard verified words: 'Painel', 'Visão Geral', 'TOTAL DE ALUNOS', 'ESCOLAS'.",
+  "rca of the issue": {
+    "original_bug": "Firebase Hosting served default 'Welcome to Firebase Hosting' welcome page instead of the React app at https://dee-eppn-plataforma.web.app.",
+    "root_cause": "Hosting had never received a real release of the React build — only the default welcome assets existed on the channel.",
+    "fix_applied_by_main_agent": "Ran `firebase deploy --only hosting --project dee-eppn-plataforma` with GOOGLE_APPLICATION_CREDENTIALS pointing at /app/backend/secrets/firebase-sa.json, deploying /app/frontend/build/.",
+    "verification": "curl + Playwright confirm: HTTP 200 with correct <title>; #root mounts (4149 chars); 'Bem-vindo' + email/password form visible; static JS/CSS assets return 200; SPA rewrite /students returns the same index.html (HTTP 200) — firebase.json rewrites work."
+  }
+}
