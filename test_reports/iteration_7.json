@@ -1,0 +1,29 @@
+{
+  "summary": "Static config validation of CI/CD workflow changes (sleep+retry for Artifact Registry API propagation) and CI-CD.md SA warning, plus public smoke test of Firebase Hosting. All 6 acceptance items pass.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": { "ui_bugs": [], "integration_issues": [], "design_issues": [] },
+  "validation_results": {
+    "yaml_valid": "PASS — python yaml.safe_load parses /app/.github/workflows/deploy.yml without errors",
+    "enable_apis_step_sleep_45": "PASS — line 42-43: 'echo APIs enabled. Waiting 45s for propagation...' followed by 'sleep 45' at end of 'Enable required GCP APIs (idempotent)' step",
+    "artifact_registry_retry_loop": "PASS — line 48 'for i in 1 2 3 4 5; do'; line 49 'gcloud artifacts repositories describe ... exit 0' on hit; line 56-62 'gcloud artifacts repositories create ... exit 0' on success; line 65 'sleep 30' between attempts; line 68 'exit 1' after 5 failures. Describe-then-create pattern intact.",
+    "ci_cd_md_sa_warning": "PASS — /app/CI-CD.md line 34 contains literal text: '⚠️ **NÃO escolha** `firebase-adminsdk-fbsvc@…` — essa é só do Firebase Admin SDK e não tem permissões Cloud Run. Confirme que clicou na linha cujo email começa por `aeppn-deploy-290`.'",
+    "workflow_structure_intact": "PASS — 2 jobs (deploy-backend, deploy-frontend); deploy-frontend.needs == 'deploy-backend'; job-level env REACT_APP_BACKEND_URL == '${{ needs.deploy-backend.outputs.url }}'; 'Strip predeploy hook (CI already built)' step present at line 128 with node -e JSON.parse/delete j.hosting.predeploy logic.",
+    "firebase_hosting_smoke_test": "PASS — GET https://dee-eppn-plataforma.web.app/ → HTTP 200, 4868 bytes, Content-Type text/html. <title>DEE — AEPPN | Gestão Pedagógica</title>, contains React 'root' div. NOT the Firebase welcome page. Login flow not tested (per request — known CORS arquitectural até deploy backend completar)."
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Acções do utilizador (fora do scope do agente): (1) trocar GitHub Secret GCP_SA_KEY para o JSON da SA aeppn-deploy-290 — OU aplicar as 7 roles à firebase-adminsdk-fbsvc; (2) activar manualmente artifactregistry.googleapis.com no projecto dee-eppn-plataforma via Cloud Shell ou Console URL."
+  ],
+  "critical_code_review_comments": [
+    "Minor: o step 'Enable required GCP APIs' assume que a SA usada tem roles/serviceusage.serviceUsageAdmin. Se o utilizador optar pela firebase-adminsdk-fbsvc SA sem adicionar esse role, o step falhará antes do retry loop alcançar valor. Considerar adicionar verificação pré-flight da identidade da SA (gcloud auth list) e logging visível no início do job para diagnóstico rápido em falhas futuras.",
+    "Minor: o retry loop em 'Ensure Artifact Registry repo exists' não distingue entre PERMISSION_DENIED (não-retriable) e SERVICE_DISABLED/propagação (retriable). Em caso de falha permanente de permissões, vai gastar 5 tentativas × 30s = 2.5 min antes de falhar. Aceitável mas pode ser optimizado capturando stderr e fazendo grep por 'PERMISSION_DENIED' para fail-fast."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "n/a (no backend code changes)", "frontend": "100% (smoke test)" },
+  "test_credentials": "Não aplicável — validação estática + smoke público sem login.",
+  "seed_data_creation": "Nenhum.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Esta iteração foi puramente de config CI/CD (workflow YAML + docs). Após o utilizador aplicar os action items (corrigir GCP_SA_KEY ou rolar permissões + activar Artifact Registry API), o próximo trigger do workflow deverá completar até Cloud Run deploy. Próxima testing agent provavelmente terá de validar full E2E: login admin@escola.pt / Admin123, troca de password obrigatória, CRUD de students, e CORS entre web.app frontend e Cloud Run backend. Smoke test atual confirma que web.app já serve React app correctamente (não Firebase welcome).",
+  "rca of the issue": "Diagnóstico do utilizador (correcto): o workflow falhou em 'Ensure Artifact Registry repo exists' com PERMISSION_DENIED/SERVICE_DISABLED porque (a) artifactregistry.googleapis.com não estava activada no projecto e o step Enable APIs anterior pode ter sido bypassed (workflow antigo) ou a API ainda não tinha propagado, e (b) o GCP_SA_KEY secret continha as credenciais da firebase-adminsdk-fbsvc (vista no campo authenticated as) em vez da aeppn-deploy-290. Mitigação aplicada nesta iteração no workflow é correcta para (a): sleep 45 pós-enable + retry 5×30s no create. Para (b) a mitigação é puramente documental (aviso explícito no CI-CD.md) — a acção é do utilizador (trocar secret ou conceder roles à SA actual)."
+}

@@ -31,7 +31,7 @@ Adicione **estes 5 secrets** (sem o primeiro o deploy falha imediatamente):
 
 | Nome do Secret | Valor | Onde obter |
 |---|---|---|
-| `GCP_SA_KEY` | Conteúdo **completo** do JSON da Service Account `aeppn-deploy-290@dee-eppn-plataforma.iam.gserviceaccount.com` | GCP Console → IAM & Admin → Service Accounts → Keys → Create JSON key. Cole o ficheiro inteiro como valor. |
+| `GCP_SA_KEY` | Conteúdo **completo** do JSON da Service Account `aeppn-deploy-290@dee-eppn-plataforma.iam.gserviceaccount.com` | GCP Console → IAM & Admin → Service Accounts → Keys → Create JSON key. Cole o ficheiro inteiro como valor. ⚠️ **NÃO escolha** `firebase-adminsdk-fbsvc@…` — essa é só do Firebase Admin SDK e não tem permissões Cloud Run. Confirme que clicou na linha cujo email começa por `aeppn-deploy-290`. |
 | `JWT_SECRET` | `ca9f0c0740f085736bd8787af1eb923e5be9a8f2bc4ceebe61309a1a6b4bc644` | Já gerado (igual ao `backend/.env`). Pode regenerar com `openssl rand -hex 32`. |
 | `ADMIN_EMAIL` | `admin@escola.pt` | Conta admin seed |
 | `ADMIN_PASSWORD` | `Admin123` | Palavra-passe inicial — **mude imediatamente após o primeiro login** |

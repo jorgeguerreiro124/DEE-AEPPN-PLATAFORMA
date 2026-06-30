@@ -39,21 +39,33 @@ jobs:
             firebasehosting.googleapis.com \
             firestore.googleapis.com \
             --project=${{ env.PROJECT_ID }}
+          echo "APIs enabled. Waiting 45s for propagation..."
+          sleep 45
 
       - name: Ensure Artifact Registry repo exists
         run: |
-          if gcloud artifacts repositories describe ${{ env.AR_REPO }} \
-               --location=${{ env.REGION }} --project=${{ env.PROJECT_ID }} \
-               >/dev/null 2>&1; then
-            echo "Repo ${{ env.AR_REPO }} already exists."
-          else
-            echo "Creating repo ${{ env.AR_REPO }}..."
-            gcloud artifacts repositories create ${{ env.AR_REPO }} \
-              --repository-format=docker \
-              --location=${{ env.REGION }} \
-              --project=${{ env.PROJECT_ID }} \
-              --description="AEPPN backend Docker images"
-          fi
+          # Retry up to 5 times to handle GCP API propagation lag after first enable
+          for i in 1 2 3 4 5; do
+            if gcloud artifacts repositories describe ${{ env.AR_REPO }} \
+                 --location=${{ env.REGION }} --project=${{ env.PROJECT_ID }} \
+                 >/dev/null 2>&1; then
+              echo "Repo ${{ env.AR_REPO }} already exists."
+              exit 0
+            fi
+            echo "Attempt $i/5 — creating repo ${{ env.AR_REPO }}..."
+            if gcloud artifacts repositories create ${{ env.AR_REPO }} \
+                 --repository-format=docker \
+                 --location=${{ env.REGION }} \
+                 --project=${{ env.PROJECT_ID }} \
+                 --description="AEPPN backend Docker images"; then
+              echo "Repo created."
+              exit 0
+            fi
+            echo "Create failed (likely API propagation). Waiting 30s before retry..."
+            sleep 30
+          done
+          echo "ERROR: Could not create Artifact Registry repo after 5 attempts."
+          exit 1
 
       - name: Configure Docker
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
